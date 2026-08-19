@@ -6,22 +6,41 @@ only raising, and the session writes the whole matrix to JSON at the end.
 
 Statuses written into results/<profile_id>/conformance.json:
 
-  supported    the AWS-documented behaviour was observed end to end.
-  partial      the behaviour is reachable but does not match AWS in a way the
-               detail records, or a property of this harness (plain-HTTP
-               endpoint, no KMS) stops it being exercisable here.
-  unsupported  the system does not implement the behaviour. The detail carries
-               the S3 error code, the HTTP status and the server's message --
-               or, for the silent failure modes, what was observed instead.
-  error        the test could not reach a verdict at all. NOT a claim about the
-               system; it means this suite hit something it did not model.
+  supported              the AWS-documented behaviour was observed end to end.
 
-Every entry in this matrix becomes a published assertion about a named
-open-source product, so the fallback status for a test that fails without
-recording anything is deliberately "error" and not "unsupported": deriving
-"unsupported" from any failure is how a harness bug becomes a public claim.
-Tests record their own verdict on every behavioural path; a bare assert in a
-test is reserved for harness invariants, where "error" is the right answer.
+  diverges               implemented, but observably different from AWS. The
+                         behaviour is there and does something; a client written
+                         against S3 may still need to know. Example: returning
+                         1001 keys with IsTruncated=False for an unbounded list.
+
+  accepted_not_enforced  the call was accepted, reported success, and did
+                         nothing. A conditional write that overwrites anyway; a
+                         retention header stored and then ignored; SSE headers
+                         echoed over an object kept in plaintext.
+
+  not_implemented        cleanly absent or refused -- a 501, or a subresource
+                         that is not routed at all. The detail carries the S3
+                         error code, the HTTP status and the server's message.
+
+  not_exercisable        the system behaves correctly and this deployment blocks
+                         the test. MinIO refusing SSE-C over plain HTTP is what
+                         AWS does too; the harness is plain HTTP by design.
+
+  error                  no verdict was reached. NOT a claim about the system;
+                         it means this suite hit something it did not model.
+
+`accepted_not_enforced` is separated from `not_implemented` deliberately, and it
+is the most useful distinction in the matrix. "This is missing, plan around it"
+and "you believe you have a guarantee and you do not" are different problems for
+a reader, and only the second one fails silently in production. Collapsing them
+into one bucket would hide exactly the finding this suite exists to surface.
+
+Every entry becomes a published assertion about a named open-source product, so
+the fallback status for a test that fails without recording anything is
+deliberately "error": deriving a verdict from any failure is how a harness bug
+becomes a public claim. Tests record their own verdict on every behavioural
+path; a bare assert in a test is reserved for harness invariants, where "error"
+is the right answer.
 """
 import json
 import os
@@ -203,8 +222,13 @@ def record(request):
     reader can judge a verdict instead of taking it on trust.
     """
     def _record(status, detail="", observed=None):
-        assert status in ("supported", "partial", "unsupported", "error"), status
-        entry = {"status": status, "detail": detail[:600]}
+        assert status in ("supported", "diverges", "accepted_not_enforced",
+                          "not_implemented", "not_exercisable", "error"), status
+        # 1000, not a few hundred: the details that explain *why* a system
+        # failed (the unrouted-subresource evidence, the SSE-C key probes) are
+        # the whole value of a cell, and truncating one mid-sentence publishes
+        # an explanation nobody can follow.
+        entry = {"status": status, "detail": detail[:1000]}
         if observed:
             entry["observed"] = observed
         _MATRIX.setdefault(_SYSTEM, {})[request.node.name] = entry
@@ -235,11 +259,24 @@ def pytest_collection_modifyitems(config, items):
 def pytest_runtest_makereport(item, call):
     outcome = yield
     report = outcome.get_result()
-    if report.when != "call" or _SYSTEM is None:
+    if _SYSTEM is None:
         return
     entry = _MATRIX.setdefault(_SYSTEM, {})
     if item.name in entry:
         return  # the test recorded its own verdict
+
+    # A fixture or setup failure used to record nothing at all, which dropped
+    # the cell from the matrix entirely -- indistinguishable, once rendered,
+    # from a system that was never run. It is not a verdict about the system,
+    # so it is an error cell, but it has to be a cell.
+    if report.when in ("setup", "teardown"):
+        if report.failed:
+            entry[item.name] = {
+                "status": "error",
+                "detail": f"{report.when} failed, no verdict reached: "
+                          + str(report.longrepr).splitlines()[-1][:300],
+            }
+        return
     if report.passed:
         # Every test is meant to record explicitly; a silent pass means one of
         # them has a path that reaches the end without a verdict.
@@ -259,6 +296,11 @@ def pytest_terminal_summary(terminalreporter):
     if not _MATRIX:
         return
     terminalreporter.section("conformance matrix")
+    if terminalreporter.config.getoption("keyword", default="") or \
+            terminalreporter.config.getoption("markexpr", default=""):
+        terminalreporter.write_line(
+            "NOTE: this session was filtered, so conformance.json now mixes these cells with "
+            "the rest of a previous run. Re-run the whole file before publishing.")
     for name, tests in _MATRIX.items():
         counts = {}
         for entry in tests.values():
@@ -290,7 +332,12 @@ def pytest_sessionfinish(session, exitstatus):
                 merged.update(previous["matrix"])
         except (json.JSONDecodeError, UnicodeDecodeError, OSError):
             merged = {}  # a corrupt file protects nothing
-    merged.update(_MATRIX)
+    # Merge per cell, not per system. `pytest conformance/ -k sse` is a normal
+    # way to re-check one behaviour, and replacing a system's whole cell dict
+    # with the filtered subset would silently truncate the published artifact --
+    # the missing cells leave nothing behind to show they were ever there.
+    for name, cells in _MATRIX.items():
+        merged.setdefault(name, {}).update(cells)
     path.write_text(json.dumps(
         {"schema": 1, "hardware_profile": _PROFILE, "matrix": merged},
         indent=2, sort_keys=True) + "\n")
