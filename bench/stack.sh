@@ -6,8 +6,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 COMPOSE_DIR="$ROOT/compose"
 NETWORK="s3bench"
-ACCESS_KEY="benchuser"
-SECRET_KEY="benchsecret0"
+SYSTEMS="minio silo rustfs seaweedfs"
+CONFIGS="c1 c2"
 
 # Pinned to the digest recorded in images.lock under "helpers.curl" -- an
 # unpinned helper image could silently change readiness detection partway
@@ -50,22 +50,56 @@ wait_ready() {
   return 1
 }
 
+# Validate <system>/<config> before doing anything else. Task 6 calls this
+# script roughly 64 times across an unattended multi-hour run: without this,
+# a typo'd system or config name (or a missing argument, which `set -u`
+# would otherwise report as an opaque "unbound variable") silently started
+# nothing and then burned wait_ready's full 120s timeout before failing.
+usage() {
+  echo "usage: stack.sh {up <system> <config>|down <system>|endpoint <system>}" >&2
+  echo "  <system>: one of: $SYSTEMS" >&2
+  echo "  <config>: one of: $CONFIGS" >&2
+  exit 2
+}
+
+require_system() {
+  local system="${1:-}"
+  [ -n "$system" ] || { echo "stack.sh: missing <system>" >&2; usage; }
+  case " $SYSTEMS " in
+    *" $system "*) ;;
+    *) echo "stack.sh: unknown system '${system}' (expected one of: $SYSTEMS)" >&2; usage ;;
+  esac
+}
+
+require_config() {
+  local config="${1:-}"
+  [ -n "$config" ] || { echo "stack.sh: missing <config>" >&2; usage; }
+  case " $CONFIGS " in
+    *" $config "*) ;;
+    *) echo "stack.sh: unknown config '${config}' (expected one of: $CONFIGS)" >&2; usage ;;
+  esac
+}
+
 case "${1:-}" in
   up)
-    system="$2"; config="$3"
+    system="${2:-}"; config="${3:-}"
+    require_system "$system"
+    require_config "$config"
     ensure_network
     compose "$system" --profile "$config" up -d
     wait_ready "$system"
     ;;
   down)
-    system="$2"
+    system="${2:-}"
+    require_system "$system"
     compose "$system" --profile c1 --profile c2 down -v --remove-orphans
     ;;
   endpoint)
-    printf 'http://bench-%s:9000\n' "$2"
+    system="${2:-}"
+    require_system "$system"
+    printf 'http://bench-%s:9000\n' "$system"
     ;;
   *)
-    echo "usage: stack.sh {up <system> <config>|down <system>|endpoint <system>}" >&2
-    exit 2
+    usage
     ;;
 esac

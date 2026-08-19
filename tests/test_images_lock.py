@@ -71,8 +71,13 @@ def test_compose_digests_match_lock():
 
     for name, entry in lock["images"].items():
         compose_path = COMPOSE_DIR / f"{name}.yaml"
-        if not compose_path.is_file():
-            continue
+        # A missing compose file for a locked system is drift too -- Ruling A
+        # said either direction must fail, and silently skipping here means
+        # renaming or deleting a compose file passes this test by omission.
+        assert compose_path.is_file(), (
+            f"images.lock has an entry for {name!r} but {compose_path} does "
+            f"not exist"
+        )
         text = compose_path.read_text()
         assert f"@{entry['digest']}" in text, (
             f"{compose_path.name} does not use the locked digest for {name} "

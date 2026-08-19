@@ -29,23 +29,31 @@ def system(request):
         subprocess.run([STACK, "down", name], check=True)
 
 
-@pytest.fixture
-def s3(system):
-    client = boto3.client(
+def _client(access_key, secret_key):
+    return boto3.client(
         "s3",
         endpoint_url=ENDPOINT,
-        aws_access_key_id="benchuser",
-        aws_secret_access_key="benchsecret0",
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key,
         region_name="us-east-1",
         config=Config(signature_version="s3v4", s3={"addressing_style": "path"}),
     )
+
+
+@pytest.fixture
+def s3(system):
+    client = _client("benchuser", "benchsecret0")
     # The endpoint answers before it is fully ready on some systems; retry briefly.
+    last_exc = None
     for _ in range(30):
         try:
             client.list_buckets()
             break
-        except Exception:
+        except Exception as exc:
+            last_exc = exc
             time.sleep(1)
+    else:
+        pytest.fail(f"{system}: S3 client never became ready: {last_exc!r}")
     return client
 
 
@@ -62,6 +70,31 @@ def test_put_get_delete_roundtrip(s3, system):
 
     listed = s3.list_objects_v2(Bucket=bucket, Prefix="roundtrip/")
     assert [o["Key"] for o in listed.get("Contents", [])] == [key]
+
+    # Auth must actually be enforced, not just accepted when correct. This is
+    # the regression guard for the SeaweedFS finding from this task's initial
+    # implementation: env-var credentials (AWS_ACCESS_KEY_ID/SECRET_ACCESS_KEY)
+    # were silently ignored by the S3 gateway, which served every request --
+    # including unsigned ones -- anonymously. Only a `-s3.config` identity
+    # file actually wires up enforcement. Without this assertion, deleting
+    # that fix leaves all other tests green while the harness benchmarks a
+    # wide-open endpoint.
+    #
+    # create_bucket is not a valid probe: SeaweedFS returns
+    # BucketAlreadyExists/409 for it even under correct auth (existence still
+    # leaks pre-auth there), so it can't distinguish "rejected" from
+    # "succeeded, bucket already existed". get_object/list_objects_v2 against
+    # a real, already-written key/bucket do reject wrong credentials
+    # consistently -- verified empirically against all four systems: every
+    # one returns InvalidAccessKeyId / HTTP 403.
+    bad = _client("wronguser", "wrongsecret0")
+    with pytest.raises(ClientError) as err:
+        bad.get_object(Bucket=bucket, Key=key)
+    code = err.value.response["Error"]["Code"]
+    status = err.value.response["ResponseMetadata"]["HTTPStatusCode"]
+    assert code == "InvalidAccessKeyId" and status == 403, (
+        f"{system}: wrong credentials were not rejected (code={code}, status={status})"
+    )
 
     s3.delete_object(Bucket=bucket, Key=key)
     with pytest.raises(ClientError) as err:
