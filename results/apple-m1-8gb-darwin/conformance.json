@@ -1,6 +1,6 @@
 {
   "hardware_profile": {
-    "captured_at": "2026-08-19T23:32:17Z",
+    "captured_at": "2026-08-19T23:52:49Z",
     "container_runtime": {
       "client_version": "29.1.2",
       "kind": "docker",
@@ -11,7 +11,7 @@
       "vm_ram_bytes": 4109217792
     },
     "disk": {
-      "host_free_bytes": 36141395968
+      "host_free_bytes": 36143288320
     },
     "fingerprint": "140c82422064",
     "host": {
@@ -134,7 +134,7 @@
       "test_presigned_url_expiry_is_enforced": {
         "detail": "the URL served while valid and answered HTTP 403 after expiry",
         "observed": {
-          "body_after_expiry": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Error><Code>AccessDenied</Code><Message>Request has expired</Message><Key>presign/expiring</Key><BucketName>conf-63ec8a22b1a8</BucketName><Resource>/conf-63ec8a",
+          "body_after_expiry": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Error><Code>AccessDenied</Code><Message>Request has expired</Message><Key>presign/expiring</Key><BucketName>conf-c003d94746c6</BucketName><Resource>/conf-c003d9",
           "http_status_after_expiry": 403
         },
         "status": "supported"
@@ -176,6 +176,7 @@
           "message": "Requests specifying Server Side Encryption with Customer provided keys must be made over a secure connection.",
           "s3_error_code": "InvalidRequest"
         },
+        "reason": "conformant_refusal",
         "status": "not_exercisable"
       },
       "test_sse_s3_encryption_is_accepted": {
@@ -185,6 +186,7 @@
           "message": "Server side encryption specified but KMS is not configured (KMS not configured for a server side encrypted objects)",
           "s3_error_code": "NotImplemented"
         },
+        "reason": "missing_prerequisite",
         "status": "not_exercisable"
       },
       "test_versioned_get_returns_the_older_version": {
@@ -278,10 +280,10 @@
         "status": "supported"
       },
       "test_object_lock_retention_blocks_deletion": {
-        "detail": "the retained version could not be deleted (HTTP 403 AccessDenied: Object is under COMPLIANCE retention and cannot be deleted until 2026-08-19 23:34:04.0 +00:00:00) and is still readable",
+        "detail": "the retained version could not be deleted (HTTP 403 AccessDenied: Object is under COMPLIANCE retention and cannot be deleted until 2026-08-19 23:54:37.0 +00:00:00) and is still readable",
         "observed": {
           "http_status": 403,
-          "message": "Object is under COMPLIANCE retention and cannot be deleted until 2026-08-19 23:34:04.0 +00:00:00",
+          "message": "Object is under COMPLIANCE retention and cannot be deleted until 2026-08-19 23:54:37.0 +00:00:00",
           "s3_error_code": "AccessDenied"
         },
         "status": "supported"
@@ -337,8 +339,14 @@
         "status": "supported"
       },
       "test_sse_c_encryption_roundtrip": {
-        "detail": "round-trips under the customer key (PUT echoed SSECustomerAlgorithm='AES256'); a read with no key is refused (HTTP 400 InvalidRequest: The object was stored using a form of Server Side Encryption. The correct parameters must be provided to retrieve the object.) and a read with a different 32-byte key is refused (HTTP 400 InvalidRequest: The provided encryption parameters did not match the ones used originally to encrypt the object.). Accepted over plain HTTP, which AWS S3 itself rejects for SSE-C.",
+        "detail": "a transport-contract divergence, not an encryption defect. The request was accepted over plain http, which means the 32-byte customer key travelled in cleartext in the x-amz-server-side-encryption-customer-key header. AWS S3 refuses SSE-C over anything but HTTPS, and that requirement belongs to the SSE-C contract rather than to general transport policy, precisely because the key rides in a header. Otherwise the data path is correct: the object round-trips under the customer key (PUT echoed SSECustomerAlgorithm='AES256'), a read with no key is refused (HTTP 400 InvalidRequest: The object was stored using a form of Server Side Encryption. The correct parameters must be provided to retrieve the object.), a read with a different 32-byte key is refused (HTTP 400 InvalidRequest: The provided encryption parameters did not match the ones used originally to encrypt the object.), and the correct key with a mismatched key MD5 is refused (HTTP 400 InvalidRequest: The provided encryption parameters did not match the ones used originally to encrypt the object.).",
         "observed": {
+          "endpoint_scheme": "http",
+          "mismatched_key_md5": {
+            "http_status": 400,
+            "message": "The provided encryption parameters did not match the ones used originally to encrypt the object.",
+            "s3_error_code": "InvalidRequest"
+          },
           "no_key": {
             "http_status": 400,
             "message": "The object was stored using a form of Server Side Encryption. The correct parameters must be provided to retrieve the object.",
@@ -351,7 +359,7 @@
             "s3_error_code": "InvalidRequest"
           }
         },
-        "status": "supported"
+        "status": "diverges"
       },
       "test_sse_s3_encryption_is_accepted": {
         "detail": "SSE-S3 (ServerSideEncryption=AES256) was refused for a deployment prerequisite this harness does not provide to any system: HTTP 400 InvalidRequest: SSE-S3 requires RUSTFS_SSE_S3_MASTER_KEY to be set to a base64-encoded 32-byte key when KMS is not configured. The stacks run every system in its default single-node configuration with no key manager wired up, so this says nothing about whether the feature exists once one is.",
@@ -360,6 +368,7 @@
           "message": "SSE-S3 requires RUSTFS_SSE_S3_MASTER_KEY to be set to a base64-encoded 32-byte key when KMS is not configured",
           "s3_error_code": "InvalidRequest"
         },
+        "reason": "missing_prerequisite",
         "status": "not_exercisable"
       },
       "test_versioned_get_returns_the_older_version": {
@@ -390,7 +399,7 @@
         "status": "supported"
       },
       "test_delete_creates_a_delete_marker": {
-        "detail": "bucket versioning, which this behaviour requires, could not be enabled: HTTP 409 BucketAlreadyExists: The requested bucket name is not available. The bucket name can not be an existing collection, and the bucket namespace is shared by all users of the system. Please select a different name and try again.. GET ?versioning on the same bucket answers HTTP 200 with status None. The ?versioning subresource is not routed at all: the identical call against the unused name 'probe-091bf5894e14' answered success and left a bucket of that name behind, so the request falls through to the CreateBucket handler. That is what the error above actually is -- a bucket-creation error, not a statement about versioning.",
+        "detail": "bucket versioning, which this behaviour requires, could not be enabled: HTTP 409 BucketAlreadyExists: The requested bucket name is not available. The bucket name can not be an existing collection, and the bucket namespace is shared by all users of the system. Please select a different name and try again.. GET ?versioning on the same bucket answers HTTP 200 with status None. The ?versioning subresource is not routed at all: the identical call against the unused name 'probe-e530611338b1' answered success and left a bucket of that name behind, so the request falls through to the CreateBucket handler. That is what the error above actually is -- a bucket-creation error, not a statement about versioning.",
         "observed": {
           "get_bucket_versioning": "GET ?versioning on the same bucket answers HTTP 200 with status None",
           "http_status": 409,
@@ -496,7 +505,7 @@
       "test_presigned_url_expiry_is_enforced": {
         "detail": "the URL served while valid and answered HTTP 403 after expiry",
         "observed": {
-          "body_after_expiry": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Error><Code>AccessDenied</Code><Message>Request has expired</Message><Resource>/conf-ba98a938d952/presign/expiring</Resource><RequestId>1787182375618670175</Req",
+          "body_after_expiry": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Error><Code>AccessDenied</Code><Message>Request has expired</Message><Resource>/conf-c9e7a0c9f7a8/presign/expiring</Resource><RequestId>1787183608310865752</Req",
           "http_status_after_expiry": 403
         },
         "status": "supported"
@@ -555,7 +564,7 @@
         "status": "accepted_not_enforced"
       },
       "test_versioned_get_returns_the_older_version": {
-        "detail": "bucket versioning, which this behaviour requires, could not be enabled: HTTP 409 BucketAlreadyExists: The requested bucket name is not available. The bucket name can not be an existing collection, and the bucket namespace is shared by all users of the system. Please select a different name and try again.. GET ?versioning on the same bucket answers HTTP 200 with status None. The ?versioning subresource is not routed at all: the identical call against the unused name 'probe-3b1ab8226062' answered success and left a bucket of that name behind, so the request falls through to the CreateBucket handler. That is what the error above actually is -- a bucket-creation error, not a statement about versioning.",
+        "detail": "bucket versioning, which this behaviour requires, could not be enabled: HTTP 409 BucketAlreadyExists: The requested bucket name is not available. The bucket name can not be an existing collection, and the bucket namespace is shared by all users of the system. Please select a different name and try again.. GET ?versioning on the same bucket answers HTTP 200 with status None. The ?versioning subresource is not routed at all: the identical call against the unused name 'probe-ab474bdad453' answered success and left a bucket of that name behind, so the request falls through to the CreateBucket handler. That is what the error above actually is -- a bucket-creation error, not a statement about versioning.",
         "observed": {
           "get_bucket_versioning": "GET ?versioning on the same bucket answers HTTP 200 with status None",
           "http_status": 409,
@@ -566,7 +575,7 @@
         "status": "not_implemented"
       },
       "test_versioning_can_be_enabled": {
-        "detail": "bucket versioning, which this behaviour requires, could not be enabled: HTTP 409 BucketAlreadyExists: The requested bucket name is not available. The bucket name can not be an existing collection, and the bucket namespace is shared by all users of the system. Please select a different name and try again.. GET ?versioning on the same bucket answers HTTP 200 with status None. The ?versioning subresource is not routed at all: the identical call against the unused name 'probe-d0ee8c800b42' answered success and left a bucket of that name behind, so the request falls through to the CreateBucket handler. That is what the error above actually is -- a bucket-creation error, not a statement about versioning.",
+        "detail": "bucket versioning, which this behaviour requires, could not be enabled: HTTP 409 BucketAlreadyExists: The requested bucket name is not available. The bucket name can not be an existing collection, and the bucket namespace is shared by all users of the system. Please select a different name and try again.. GET ?versioning on the same bucket answers HTTP 200 with status None. The ?versioning subresource is not routed at all: the identical call against the unused name 'probe-ed5a851dae28' answered success and left a bucket of that name behind, so the request falls through to the CreateBucket handler. That is what the error above actually is -- a bucket-creation error, not a statement about versioning.",
         "observed": {
           "get_bucket_versioning": "GET ?versioning on the same bucket answers HTTP 200 with status None",
           "http_status": 409,
@@ -577,7 +586,7 @@
         "status": "not_implemented"
       },
       "test_versioning_keeps_prior_versions": {
-        "detail": "bucket versioning, which this behaviour requires, could not be enabled: HTTP 409 BucketAlreadyExists: The requested bucket name is not available. The bucket name can not be an existing collection, and the bucket namespace is shared by all users of the system. Please select a different name and try again.. GET ?versioning on the same bucket answers HTTP 200 with status None. The ?versioning subresource is not routed at all: the identical call against the unused name 'probe-9bc1517c9d25' answered success and left a bucket of that name behind, so the request falls through to the CreateBucket handler. That is what the error above actually is -- a bucket-creation error, not a statement about versioning.",
+        "detail": "bucket versioning, which this behaviour requires, could not be enabled: HTTP 409 BucketAlreadyExists: The requested bucket name is not available. The bucket name can not be an existing collection, and the bucket namespace is shared by all users of the system. Please select a different name and try again.. GET ?versioning on the same bucket answers HTTP 200 with status None. The ?versioning subresource is not routed at all: the identical call against the unused name 'probe-5a1cab892667' answered success and left a bucket of that name behind, so the request falls through to the CreateBucket handler. That is what the error above actually is -- a bucket-creation error, not a statement about versioning.",
         "observed": {
           "get_bucket_versioning": "GET ?versioning on the same bucket answers HTTP 200 with status None",
           "http_status": 409,
@@ -689,7 +698,7 @@
       "test_presigned_url_expiry_is_enforced": {
         "detail": "the URL served while valid and answered HTTP 403 after expiry",
         "observed": {
-          "body_after_expiry": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Error><Code>AccessDenied</Code><Message>Request has expired</Message><Key>presign/expiring</Key><BucketName>conf-319ae1a766aa</BucketName><Resource>/conf-319ae1",
+          "body_after_expiry": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Error><Code>AccessDenied</Code><Message>Request has expired</Message><Key>presign/expiring</Key><BucketName>conf-dcad46075540</BucketName><Resource>/conf-dcad46",
           "http_status_after_expiry": 403
         },
         "status": "supported"
@@ -731,6 +740,7 @@
           "message": "Requests specifying Server Side Encryption with Customer provided keys must be made over a secure connection.",
           "s3_error_code": "InvalidRequest"
         },
+        "reason": "conformant_refusal",
         "status": "not_exercisable"
       },
       "test_sse_s3_encryption_is_accepted": {
@@ -740,6 +750,7 @@
           "message": "Server side encryption specified but KMS is not configured (KMS not configured for a server side encrypted objects)",
           "s3_error_code": "NotImplemented"
         },
+        "reason": "missing_prerequisite",
         "status": "not_exercisable"
       },
       "test_versioned_get_returns_the_older_version": {

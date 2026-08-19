@@ -36,8 +36,10 @@ import base64
 import hashlib
 import json as _json
 import os as _os
+import re
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -119,14 +121,14 @@ def _try(fn, **kwargs):
         return None, err
 
 
-def _finding(record, status, detail, observed=None):
+def _finding(record, status, detail, observed=None, reason=None):
     """Record a non-supported verdict and fail the test.
 
     Failing keeps the finding visible in pytest's own output -- a conformance
     run is expected to exit non-zero against any system that is missing a
     behaviour -- while the recorded status is what the matrix publishes.
     """
-    record(status, detail, observed)
+    record(status, detail, observed, reason)
     pytest.fail(f"{status}: {detail}")
 
 
@@ -1058,24 +1060,68 @@ def test_object_tagging_roundtrip(s3, bucket, record):
     record("supported", "object tag set written and read back unchanged")
 
 
-# A rejection that names a deployment prerequisite is a different finding from a
-# rejection that says the feature does not exist. AWS itself refuses SSE-C over
-# plain HTTP, and SSE-S3 needs a key source; this harness runs every system in
-# its default single-node configuration over plain HTTP with no KMS, so a system
-# that asks for TLS or a key manager is behaving correctly and simply cannot be
-# exercised here. Those record "not_exercisable" with the server's own words --
-# never "not_implemented", which would read as a missing feature, and never
-# "accepted_not_enforced", which is the opposite finding.
-_PREREQUISITE_MARKERS = ("kms", "key management", "secure connection", "https", "tls", "ssl")
+# A refusal that names a deployment prerequisite is a different finding from one
+# that says the feature does not exist. But the two kinds of prerequisite are
+# also different claims about the product, so they are separated into a
+# machine-readable reason rather than left for a reader to infer from prose --
+# any rendering that drops the detail text would otherwise collapse them:
+#
+#   conformant_refusal    the server refused for a reason AWS refuses for too.
+#                         MinIO declining SSE-C without TLS is correct behaviour,
+#                         and this harness is plain HTTP by design.
+#   missing_prerequisite  the feature needs something this deployment does not
+#                         provide, such as a key manager. Says nothing either way
+#                         about whether the feature works once it is provided.
+#
+# Matching is on whole documented phrases, never on bare scheme tokens, and any
+# URL is stripped from the message first. Under this vocabulary
+# `not_exercisable` is an affirmative claim that the system behaved correctly,
+# so a server that merely cites a docs link (".. see https://../tls-setup")
+# must not have a genuine gap silently promoted into one. Precision is chosen
+# over recall deliberately: an unmatched prerequisite is recorded as
+# `not_implemented`, which understates rather than overstates.
+_URL_RE = re.compile(r"https?://\S+")
+
+_CONFORMANT_REFUSAL_PHRASES = (
+    "must be made over a secure connection",
+    "over a secure connection",
+    "requires a secure connection",
+    "requires tls",
+    "requires https",
+    "must use https",
+    "only over https",
+)
+
+_MISSING_PREREQUISITE_PHRASES = (
+    "kms is not configured",
+    "kms not configured",
+    "kms is not enabled",
+    "key management service is not configured",
+    "master_key",
+)
+
+
+def _prerequisite_reason(code, message):
+    """Classify a refusal.
+
+    Returns "conformant_refusal", "missing_prerequisite", or None when the
+    refusal is a real gap rather than a property of this deployment.
+    """
+    haystack = _URL_RE.sub(" ", f"{code} {message}").lower()
+    if any(phrase in haystack for phrase in _CONFORMANT_REFUSAL_PHRASES):
+        return "conformant_refusal"
+    if any(phrase in haystack for phrase in _MISSING_PREREQUISITE_PHRASES):
+        return "missing_prerequisite"
+    return None
 
 
 def _encryption_finding(record, err, feature, note):
     obs = _observed(err)
-    haystack = f"{obs['s3_error_code']} {obs['message']}".lower()
-    if any(marker in haystack for marker in _PREREQUISITE_MARKERS):
+    reason = _prerequisite_reason(obs["s3_error_code"], obs["message"])
+    if reason is not None:
         _finding(record, "not_exercisable",
                  f"{feature} was refused for a deployment prerequisite this harness does not "
-                 f"provide to any system: {_fmt(obs)}. {note}", obs)
+                 f"provide to any system: {_fmt(obs)}. {note}", obs, reason=reason)
     _finding(record, "not_implemented", f"{feature} was rejected: {_fmt(obs)}", obs)
 
 
@@ -1110,14 +1156,24 @@ def test_sse_s3_encryption_is_accepted(s3, bucket, record):
 
 
 def test_sse_c_encryption_roundtrip(s3, bucket, record):
-    """SSE-C must encrypt under the caller's key and refuse reads that lack it.
+    """SSE-C must encrypt under the caller's key, refuse reads that lack it, and
+    be offered only over a secure transport.
 
-    Three observations, not one. The object round-trips with the right key; a
-    read carrying no key is refused; a read carrying a *different* valid 32-byte
-    key is refused. Without the last two a system that ignores the SSE-C headers
-    entirely and stores plaintext records as supported. The refusals must also be
-    SSE refusals -- a 400 or 403 from the server -- rather than any failure at
-    all, or a transport fault would read as enforcement.
+    Four observations, not one. The object round-trips with the right key; a read
+    carrying no key is refused; a read carrying a *different* valid 32-byte key is
+    refused; and the right key presented with a mismatched key MD5 is refused,
+    which is what shows the key material is actually bound to the object rather
+    than the headers being waved through. Without them a system that ignores the
+    SSE-C headers entirely and stores plaintext records as supported. The refusals
+    must also be SSE refusals -- a 400 or 403 from the server -- rather than any
+    failure at all, or a transport fault would read as enforcement.
+
+    The transport is part of the contract here, not general policy. AWS refuses
+    SSE-C over anything but HTTPS *specifically because the customer key travels
+    in a request header*, so a system that accepts the key in cleartext is
+    observably different from AWS on the SSE-C contract even when its crypto is
+    correct. That is a `diverges`, and the detail keeps the data-path evidence
+    attached so the demotion cannot be misread as an encryption defect.
     """
     key_bytes = _os.urandom(32)
     b64 = base64.b64encode(key_bytes).decode()
@@ -1148,10 +1204,10 @@ def test_sse_c_encryption_roundtrip(s3, bucket, record):
     if body != BODY:
         _finding(record, "diverges", f"the SSE-C object read back as {body[:80]!r}")
 
-    # An encrypted object must not be readable without the key, and must not be
-    # readable under a different one. Whether the unkeyed read hands back the
-    # plaintext is the difference between "the key is not required" and "the
-    # object was never encrypted", so it is observed rather than inferred.
+    # An encrypted object must not be readable without the key, nor under a
+    # different one. Whether the unkeyed read hands back the plaintext is the
+    # difference between "the key is not required" and "the object was never
+    # encrypted", so it is observed rather than inferred.
     naked, naked_err = _try(s3.get_object, Bucket=bucket, Key=okey)
     if naked_err is None:
         leaked = naked["Body"].read()
@@ -1183,24 +1239,52 @@ def test_sse_c_encryption_roundtrip(s3, bucket, record):
                   "body": leaked[:120].decode(errors="replace")})
     wrong_obs = _observed(wrong_err)
 
-    for label, obs in (("no key", naked_obs), ("a different 32-byte key", wrong_obs)):
+    # The right key with the wrong key-MD5: the two are checked against each
+    # other, or they are not being checked at all.
+    mismatched, mismatched_err = _try(s3.get_object, Bucket=bucket, Key=okey,
+                                      SSECustomerAlgorithm="AES256", SSECustomerKey=b64,
+                                      SSECustomerKeyMD5=other_md5)
+    if mismatched_err is None:
+        _finding(record, "accepted_not_enforced",
+                 f"the correct key presented with another key's MD5 is accepted (HTTP "
+                 f"{_status(mismatched)}), so SSECustomerKeyMD5 is not validated against the key",
+                 {"http_status": _status(mismatched)})
+    mismatched_obs = _observed(mismatched_err)
+
+    for label, obs in (("no key", naked_obs), ("a different 32-byte key", wrong_obs),
+                       ("the correct key and a mismatched key MD5", mismatched_obs)):
         if obs["http_status"] not in (400, 403):
             _finding(record, "diverges",
                      f"the read with {label} was refused, but with {_fmt(obs)} rather than the "
                      f"400 or 403 AWS answers -- the refusal does not look like an SSE-C "
                      f"rejection", obs)
 
-    # Accepting SSE-C at all over plain HTTP is looser than AWS, which refuses
-    # it. The cell records the round-trip that was observed; the note keeps it
-    # from reading as a point in this system's favour against one that refused
-    # for the right reason.
-    record("supported",
-           f"round-trips under the customer key (PUT echoed SSECustomerAlgorithm={echoed!r}); a "
-           f"read with no key is refused ({_fmt(naked_obs)}) and a read with a different 32-byte "
-           f"key is refused ({_fmt(wrong_obs)}). Accepted over plain HTTP, which AWS S3 itself "
-           f"rejects for SSE-C.",
-           {"no_key": naked_obs, "wrong_key": wrong_obs,
-            "sse_customer_algorithm_echoed": echoed})
+    data_path = (f"the data path is correct: the object round-trips under the customer key (PUT "
+                 f"echoed SSECustomerAlgorithm={echoed!r}), a read with no key is refused "
+                 f"({_fmt(naked_obs)}), a read with a different 32-byte key is refused "
+                 f"({_fmt(wrong_obs)}), and the correct key with a mismatched key MD5 is refused "
+                 f"({_fmt(mismatched_obs)})")
+    evidence = {"no_key": naked_obs, "wrong_key": wrong_obs,
+                "mismatched_key_md5": mismatched_obs,
+                "sse_customer_algorithm_echoed": echoed}
+
+    scheme = urllib.parse.urlparse(s3.meta.endpoint_url).scheme
+    if scheme != "https":
+        evidence["endpoint_scheme"] = scheme
+        # The framing leads, and the evidence follows it. If this detail is ever
+        # truncated or skimmed, the half a reader must not lose is that the
+        # encryption itself is sound.
+        _finding(record, "diverges",
+                 f"a transport-contract divergence, not an encryption defect. The request was "
+                 f"accepted over plain {scheme}, which means the 32-byte customer key travelled "
+                 f"in cleartext in the x-amz-server-side-encryption-customer-key header. AWS S3 "
+                 f"refuses SSE-C over anything but HTTPS, and that requirement belongs to the "
+                 f"SSE-C contract rather than to general transport policy, precisely because the "
+                 f"key rides in a header. Otherwise {data_path}.",
+                 evidence)
+    evidence["endpoint_scheme"] = scheme
+    record("supported", f"{data_path}; and it is served over https, as the SSE-C contract "
+                        f"requires", evidence)
 
 
 def test_bucket_policy_can_be_set_and_read(s3, bucket, record):

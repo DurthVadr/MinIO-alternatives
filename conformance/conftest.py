@@ -13,18 +13,34 @@ Statuses written into results/<profile_id>/conformance.json:
                          against S3 may still need to know. Example: returning
                          1001 keys with IsTruncated=False for an unbounded list.
 
-  accepted_not_enforced  the call was accepted, reported success, and did
-                         nothing. A conditional write that overwrites anyway; a
-                         retention header stored and then ignored; SSE headers
-                         echoed over an object kept in plaintext.
+  accepted_not_enforced  the call was accepted and reported success while the
+                         guarantee it implies was never evaluated or enforced.
+                         Sometimes nothing happened at all -- a retention header
+                         stored and ignored, SSE headers echoed over an object
+                         kept in plaintext. Sometimes the work happened and only
+                         the condition on it was skipped: a conditional write
+                         that lands because the precondition was never read
+                         belongs here too, and is the more dangerous shape,
+                         because the caller sees a success that means something
+                         weaker than they asked for.
 
   not_implemented        cleanly absent or refused -- a 501, or a subresource
                          that is not routed at all. The detail carries the S3
                          error code, the HTTP status and the server's message.
 
-  not_exercisable        the system behaves correctly and this deployment blocks
-                         the test. MinIO refusing SSE-C over plain HTTP is what
-                         AWS does too; the harness is plain HTTP by design.
+  not_exercisable        the behaviour could not be exercised here. Every cell
+                         with this status carries a "reason" field, because two
+                         different claims live under it and any rendering that
+                         drops the prose would merge them:
+                           conformant_refusal    the server refused for a reason
+                                                 AWS refuses for too (MinIO
+                                                 declining SSE-C without TLS).
+                                                 An affirmative claim that the
+                                                 system behaved correctly.
+                           missing_prerequisite  the feature needs something
+                                                 this deployment does not supply
+                                                 (a key manager). No claim
+                                                 either way about the feature.
 
   error                  no verdict was reached. NOT a claim about the system;
                          it means this suite hit something it did not model.
@@ -221,14 +237,26 @@ def record(request):
     the structured evidence (S3 error code, HTTP status, server message) so a
     reader can judge a verdict instead of taking it on trust.
     """
-    def _record(status, detail="", observed=None):
+    def _record(status, detail="", observed=None, reason=None):
         assert status in ("supported", "diverges", "accepted_not_enforced",
                           "not_implemented", "not_exercisable", "error"), status
-        # 1000, not a few hundred: the details that explain *why* a system
-        # failed (the unrouted-subresource evidence, the SSE-C key probes) are
-        # the whole value of a cell, and truncating one mid-sentence publishes
-        # an explanation nobody can follow.
-        entry = {"status": status, "detail": detail[:1000]}
+        # not_exercisable is the one status that can assert the system behaved
+        # correctly, or merely that we could not look -- opposite claims. It is
+        # never written without saying which.
+        if status == "not_exercisable":
+            assert reason in ("conformant_refusal", "missing_prerequisite"), (
+                f"not_exercisable requires a reason, got {reason!r}")
+        else:
+            assert reason is None, f"{status} must not carry a reason ({reason!r})"
+        # 1400, not a few hundred: the details that explain *why* a system
+        # failed (the unrouted-subresource evidence, the SSE-C key probes and
+        # their transport caveat) are the whole value of a cell, and truncating
+        # one mid-sentence publishes an explanation nobody can follow. Details
+        # are also written so the interpretation leads and the evidence follows,
+        # so that a truncation here can only ever cost evidence, never meaning.
+        entry = {"status": status, "detail": detail[:1400]}
+        if reason:
+            entry["reason"] = reason
         if observed:
             entry["observed"] = observed
         _MATRIX.setdefault(_SYSTEM, {})[request.node.name] = entry
