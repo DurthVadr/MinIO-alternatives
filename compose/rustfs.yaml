@@ -81,6 +81,10 @@ services:
   #    use distinct physical disks; detected shared devices [vda => /data0,
   #    /data1, /data2, /data3] ... Set RUSTFS_UNSAFE_BYPASS_DISK_CHECK=true
   #    only for local testing or CI to bypass this safety check" -- then exits.
+  #    (tests/test_durability.py re-captures that refusal live on every rustfs
+  #    run and records it in durability.json, so the quote is re-verified
+  #    rather than remembered; from a volume-less probe container the same
+  #    check names the overlay device instead of vda.)
   #    Every c2 config in this study puts four "drives" on the one host disk,
   #    MinIO/Silo included (MinIO only warns: "Host local has more than 1
   #    drives of set"). So this flag buys equal treatment, not an advantage,

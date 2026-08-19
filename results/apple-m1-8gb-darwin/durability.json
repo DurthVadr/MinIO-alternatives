@@ -10,12 +10,13 @@
       "object_path_after_kill": "absent",
       "payload_bytes": 8388608,
       "read_after_fault_error": null,
-      "read_after_fault_seconds": 0.06,
+      "read_after_fault_seconds": 0.05,
       "redundancy_limit_action": "/data1, /data2 wiped as well (parity 1 cannot cover 2 lost drives)",
       "redundancy_limit_distinct_outcomes": {
-        "HTTP 404 / NoSuchBucket": 1,
-        "HTTP 503 / SlowDownRead": 4
+        "HTTP 404 / NoSuchBucket": 2,
+        "HTTP 503 / SlowDownRead": 5
       },
+      "redundancy_limit_method": "Samples scheduled at 0, 0.25, 0.5, 1, 2, 4 and 8 seconds after the fault; seconds_since_fault records when each was actually taken. Each sample is TWO separate requests: http_status, content_length_header, content_type_header and body_bytes_received come from a raw signed GET, while sdk_outcome and sdk_http_status come from a separate boto3 GET immediately after it -- so a compound label such as 'HTTP 200 / ResponseStreamingError' describes two requests taken moments apart, not one response. The counts in redundancy_limit_distinct_outcomes therefore describe THIS SCHEDULE, not observed frequencies: an outcome confined to a sub-second window appears once because only the earliest samples land inside that window.",
       "redundancy_limit_read_failed": true,
       "redundancy_limit_samples": [
         {
@@ -25,8 +26,25 @@
           "content_type_header": "application/xml",
           "http_status": 404,
           "readable": false,
+          "sample_index": 0,
+          "scheduled_offset_s": 0.0,
           "sdk_http_status": 404,
           "sdk_outcome": "ClientError (NoSuchBucket): The specified bucket does not exist",
+          "seconds_since_fault": 0.0,
+          "wire_error": null
+        },
+        {
+          "body_bytes_received": 350,
+          "body_excerpt": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><Key>probe.bin</Key><BucketName>durability</BucketName><Resource>/durabilit",
+          "content_length_header": "350",
+          "content_type_header": "application/xml",
+          "http_status": 404,
+          "readable": false,
+          "sample_index": 1,
+          "scheduled_offset_s": 0.25,
+          "sdk_http_status": 404,
+          "sdk_outcome": "ClientError (NoSuchBucket): The specified bucket does not exist",
+          "seconds_since_fault": 0.252,
           "wire_error": null
         },
         {
@@ -36,8 +54,11 @@
           "content_type_header": "application/xml",
           "http_status": 503,
           "readable": false,
+          "sample_index": 2,
+          "scheduled_offset_s": 0.5,
           "sdk_http_status": 503,
           "sdk_outcome": "ClientError (SlowDownRead): Resource requested is unreadable, please reduce your request rate",
+          "seconds_since_fault": 0.5,
           "wire_error": null
         },
         {
@@ -47,8 +68,11 @@
           "content_type_header": "application/xml",
           "http_status": 503,
           "readable": false,
+          "sample_index": 3,
+          "scheduled_offset_s": 1.0,
           "sdk_http_status": 503,
           "sdk_outcome": "ClientError (SlowDownRead): Resource requested is unreadable, please reduce your request rate",
+          "seconds_since_fault": 1.382,
           "wire_error": null
         },
         {
@@ -58,8 +82,11 @@
           "content_type_header": "application/xml",
           "http_status": 503,
           "readable": false,
+          "sample_index": 4,
+          "scheduled_offset_s": 2.0,
           "sdk_http_status": 503,
           "sdk_outcome": "ClientError (SlowDownRead): Resource requested is unreadable, please reduce your request rate",
+          "seconds_since_fault": 2.005,
           "wire_error": null
         },
         {
@@ -69,11 +96,29 @@
           "content_type_header": "application/xml",
           "http_status": 503,
           "readable": false,
+          "sample_index": 5,
+          "scheduled_offset_s": 4.0,
           "sdk_http_status": 503,
           "sdk_outcome": "ClientError (SlowDownRead): Resource requested is unreadable, please reduce your request rate",
+          "seconds_since_fault": 4.003,
+          "wire_error": null
+        },
+        {
+          "body_bytes_received": 380,
+          "body_excerpt": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Error><Code>SlowDownRead</Code><Message>Resource requested is unreadable, please reduce your request rate</Message><Key>probe.bin</Key><BucketName>durability</B",
+          "content_length_header": "380",
+          "content_type_header": "application/xml",
+          "http_status": 503,
+          "readable": false,
+          "sample_index": 6,
+          "scheduled_offset_s": 8.0,
+          "sdk_http_status": 503,
+          "sdk_outcome": "ClientError (SlowDownRead): Resource requested is unreadable, please reduce your request rate",
+          "seconds_since_fault": 8.006,
           "wire_error": null
         }
       ],
+      "shared_device_notice": "INFO: WARNING: Host local has more than 1 drives of set. A host failure will result in data becoming unavailable.",
       "storage": {
         "caveat": "measured with a single large object; not a general figure for workloads dominated by small objects",
         "logical_bytes": 268435456,
@@ -109,27 +154,41 @@
     "configuration_caveats": [
       {
         "also_required": "user: root -- the image runs as uid 10001 and only /data is pre-owned by it, so fresh /data0../data3 mounts are root-owned and the server dies with 'Io error: Permission denied (os error 13)'. compose/minio.yaml needs the same workaround.",
-        "peer_behaviour": "MinIO and Silo meet the identical shared-disk condition and only warn ('Host local has more than 1 drives of set. A host failure will result in data becoming unavailable.'); SeaweedFS has no equivalent check at all. The bypass equalises the comparison rather than relaxing it for RustFS -- and RustFS is the only one of the four that treats the condition as an error.",
-        "refusal_message": "local erasure endpoints must use distinct physical disks; detected shared devices [vda => /data0, /data1, /data2, /data3] ... Set RUSTFS_UNSAFE_BYPASS_DISK_CHECK=true only for local testing or CI to bypass this safety check",
+        "effect_on_comparison": "Equalises rather than relaxes. The alternatives were to drop RustFS from config 2, or to give it four real devices the other three did not get; both would have made the comparison less fair, not more.",
+        "finding": "RustFS is the only one of the four that treats a shared physical device under erasure coding as a startup error rather than a warning or silence. It is also the youngest of the four (rc). A maturity row built from this data should say so in both directions.",
+        "refusal_observed": {
+          "exit_code": 1,
+          "message": "[FATAL] Server runtime failed: local erasure endpoints must use distinct physical disks; detected shared devices [0:64 => /data0, /data1, /data2, /data3]. validation diagnostics: [path='/data0', canonical='/data0', st_dev='0:64', device_ids=[0:64]; path='/data1', canonical='/data1', st_dev='0:64', device_ids=[0:64]; path='/data2', canonical='/data2', st_dev='0:64', device_ids=[0:64]; path='/data3', canonical='/data3', st_dev='0:64', device_ids=[0:64]]. Set RUSTFS_UNSAFE_BYPASS_DISK_CHECK=true only for local testing or CI to bypass this safety check",
+          "probe": "docker run --user root -e RUSTFS_VOLUMES=/data0,/data1,/data2,/data3 <rustfs image>, no RUSTFS_UNSAFE_BYPASS_DISK_CHECK"
+        },
         "setting": "RUSTFS_UNSAFE_BYPASS_DISK_CHECK=true",
+        "shared_device_check_by_system": {
+          "minio": "WARNING only, then starts: 'Host local has more than 1 drives of set. A host failure will result in data becoming unavailable.' Observed line in minio's own record under evidence.shared_device_notice.",
+          "rustfs": "ERROR: refuses to start in erasure mode, names the offending device and st_dev, and points at the exact opt-out. Captured live in refusal_observed below.",
+          "seaweedfs": "NO equivalent check. Its four volume servers each use a single directory, all on the one host disk, and nothing in its startup output remarks on it -- evidence.shared_device_notice is null in its record.",
+          "silo": "WARNING only, then starts -- same message as MinIO, same code base. Observed line in silo's own record under evidence.shared_device_notice."
+        },
+        "verified": "present in the running container's environment (docker inspect) and in its compose service",
         "why": "RustFS refuses to start in erasure mode when its drives share a physical device, which every c2 config in this study does -- four drives on one host disk."
       }
     ],
     "device_killed": "/data3 wiped (1 of 4 drives)",
     "evidence": {
       "device_bytes_after_kill": 0,
-      "device_bytes_before_kill": 92299616,
+      "device_bytes_before_kill": 92299608,
       "object_bytes_on_device_after_kill": null,
       "object_bytes_on_device_before_kill": 2797007,
       "object_path_after_kill": "absent",
       "payload_bytes": 8388608,
       "read_after_fault_error": null,
-      "read_after_fault_seconds": 0.06,
+      "read_after_fault_seconds": 0.05,
       "redundancy_limit_action": "/data1, /data2 wiped as well (parity 1 cannot cover 2 lost drives)",
       "redundancy_limit_distinct_outcomes": {
         "HTTP 200 / ResponseStreamingError": 1,
-        "HTTP 503 / SlowDown": 4
+        "HTTP 200 / SlowDown": 1,
+        "HTTP 503 / SlowDown": 5
       },
+      "redundancy_limit_method": "Samples scheduled at 0, 0.25, 0.5, 1, 2, 4 and 8 seconds after the fault; seconds_since_fault records when each was actually taken. Each sample is TWO separate requests: http_status, content_length_header, content_type_header and body_bytes_received come from a raw signed GET, while sdk_outcome and sdk_http_status come from a separate boto3 GET immediately after it -- so a compound label such as 'HTTP 200 / ResponseStreamingError' describes two requests taken moments apart, not one response. The counts in redundancy_limit_distinct_outcomes therefore describe THIS SCHEDULE, not observed frequencies: an outcome confined to a sub-second window appears once because only the earliest samples land inside that window.",
       "redundancy_limit_read_failed": true,
       "redundancy_limit_samples": [
         {
@@ -139,8 +198,25 @@
           "content_type_header": "application/octet-stream",
           "http_status": 200,
           "readable": false,
+          "sample_index": 0,
+          "scheduled_offset_s": 0.0,
           "sdk_http_status": null,
           "sdk_outcome": "ResponseStreamingError: An error occurred while reading from response stream: ('Connection broken: IncompleteRead(0 bytes read, 8388608 more expected)', IncompleteRead(0 bytes read, 8388608 more expected))",
+          "seconds_since_fault": 0.0,
+          "wire_error": "IncompleteRead: IncompleteRead(0 bytes read, 8388608 more expected)"
+        },
+        {
+          "body_bytes_received": 0,
+          "body_excerpt": "",
+          "content_length_header": "8388608",
+          "content_type_header": "application/octet-stream",
+          "http_status": 200,
+          "readable": false,
+          "sample_index": 1,
+          "scheduled_offset_s": 0.25,
+          "sdk_http_status": 503,
+          "sdk_outcome": "ClientError (SlowDown): Resource requested is unreadable, please reduce your request rate",
+          "seconds_since_fault": 0.904,
           "wire_error": "IncompleteRead: IncompleteRead(0 bytes read, 8388608 more expected)"
         },
         {
@@ -150,8 +226,11 @@
           "content_type_header": "application/xml",
           "http_status": 503,
           "readable": false,
+          "sample_index": 2,
+          "scheduled_offset_s": 0.5,
           "sdk_http_status": 503,
           "sdk_outcome": "ClientError (SlowDown): Resource requested is unreadable, please reduce your request rate",
+          "seconds_since_fault": 1.976,
           "wire_error": null
         },
         {
@@ -161,8 +240,11 @@
           "content_type_header": "application/xml",
           "http_status": 503,
           "readable": false,
+          "sample_index": 3,
+          "scheduled_offset_s": 1.0,
           "sdk_http_status": 503,
           "sdk_outcome": "ClientError (SlowDown): Resource requested is unreadable, please reduce your request rate",
+          "seconds_since_fault": 2.778,
           "wire_error": null
         },
         {
@@ -172,8 +254,11 @@
           "content_type_header": "application/xml",
           "http_status": 503,
           "readable": false,
+          "sample_index": 4,
+          "scheduled_offset_s": 2.0,
           "sdk_http_status": 503,
           "sdk_outcome": "ClientError (SlowDown): Resource requested is unreadable, please reduce your request rate",
+          "seconds_since_fault": 3.107,
           "wire_error": null
         },
         {
@@ -183,21 +268,39 @@
           "content_type_header": "application/xml",
           "http_status": 503,
           "readable": false,
+          "sample_index": 5,
+          "scheduled_offset_s": 4.0,
           "sdk_http_status": 503,
           "sdk_outcome": "ClientError (SlowDown): Resource requested is unreadable, please reduce your request rate",
+          "seconds_since_fault": 4.008,
+          "wire_error": null
+        },
+        {
+          "body_bytes_received": 158,
+          "body_excerpt": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Error><Code>SlowDown</Code><Message>Resource requested is unreadable, please reduce your request rate</Message></Error>",
+          "content_length_header": "158",
+          "content_type_header": "application/xml",
+          "http_status": 503,
+          "readable": false,
+          "sample_index": 6,
+          "scheduled_offset_s": 8.0,
+          "sdk_http_status": 503,
+          "sdk_outcome": "ClientError (SlowDown): Resource requested is unreadable, please reduce your request rate",
+          "seconds_since_fault": 8.01,
           "wire_error": null
         }
       ],
+      "shared_device_notice": "silent while the caveat setting is in effect; without it the server refuses to start -- see configuration_caveats[].refusal_observed",
       "storage": {
         "caveat": "measured with a single large object; not a general figure for workloads dominated by small objects",
         "logical_bytes": 268435456,
         "method": "du -sb over every bench-<system>_* docker volume, before and after one incompressible object of logical_bytes",
         "object_count": 1,
         "per_volume_after": {
-          "bench-rustfs_rustfs-d0": 89613106,
-          "bench-rustfs_rustfs-d1": 89613106,
-          "bench-rustfs_rustfs-d2": 89613106,
-          "bench-rustfs_rustfs-d3": 89613106
+          "bench-rustfs_rustfs-d0": 89613107,
+          "bench-rustfs_rustfs-d1": 89613107,
+          "bench-rustfs_rustfs-d2": 89613107,
+          "bench-rustfs_rustfs-d3": 89613107
         },
         "per_volume_baseline": {
           "bench-rustfs_rustfs-d0": 79037,
@@ -205,9 +308,9 @@
           "bench-rustfs_rustfs-d2": 79037,
           "bench-rustfs_rustfs-d3": 79037
         },
-        "physical_bytes_after": 358452424,
+        "physical_bytes_after": 358452428,
         "physical_bytes_baseline": 316148,
-        "physical_bytes_delta": 358136276,
+        "physical_bytes_delta": 358136280,
         "system": "rustfs",
         "usable_ratio": 0.7495,
         "usable_ratio_gross": 0.7489
@@ -221,95 +324,140 @@
   },
   "seaweedfs": {
     "configuration_caveats": [],
-    "device_killed": "bench-swfs-vol3 stopped (1 of 4 volume servers, holding 2 of the object's 2 volumes)",
+    "device_killed": "bench-swfs-vol1 stopped (1 of 4 volume servers, holding 2 of the object's 2 volumes)",
     "evidence": {
       "object_replicas": {
-        "7": [
-          "bench-swfs-vol0",
-          "bench-swfs-vol3"
-        ],
         "8": [
-          "bench-swfs-vol2",
+          "bench-swfs-vol0",
+          "bench-swfs-vol1"
+        ],
+        "9": [
+          "bench-swfs-vol1",
           "bench-swfs-vol3"
         ]
       },
       "payload_bytes": 8388608,
       "read_after_fault_error": null,
-      "read_after_fault_seconds": 0.14,
-      "redundancy_limit_action": "every server holding volume 7 stopped (bench-swfs-vol0, bench-swfs-vol3, including bench-swfs-vol3)",
+      "read_after_fault_seconds": 0.07,
+      "redundancy_limit_action": "every server holding volume 8 stopped (bench-swfs-vol0, bench-swfs-vol1, including bench-swfs-vol1)",
       "redundancy_limit_distinct_outcomes": {
-        "HTTP 500 / ProtocolError": 5
+        "HTTP 500 / ProtocolError": 7
       },
+      "redundancy_limit_method": "Samples scheduled at 0, 0.25, 0.5, 1, 2, 4 and 8 seconds after the fault; seconds_since_fault records when each was actually taken. Each sample is TWO separate requests: http_status, content_length_header, content_type_header and body_bytes_received come from a raw signed GET, while sdk_outcome and sdk_http_status come from a separate boto3 GET immediately after it -- so a compound label such as 'HTTP 200 / ResponseStreamingError' describes two requests taken moments apart, not one response. The counts in redundancy_limit_distinct_outcomes therefore describe THIS SCHEDULE, not observed frequencies: an outcome confined to a sub-second window appears once because only the earliest samples land inside that window.",
       "redundancy_limit_read_failed": true,
       "redundancy_limit_samples": [
         {
           "body_bytes_received": 64,
-          "body_excerpt": "operation LookupFileId 7,4243163e90 failed, err: urls not found\n",
+          "body_excerpt": "operation LookupFileId 8,42b8faebec failed, err: urls not found\n",
           "content_length_header": "8388608",
           "content_type_header": "text/plain; charset=utf-8",
           "http_status": 500,
           "readable": false,
+          "sample_index": 0,
+          "scheduled_offset_s": 0.0,
           "sdk_http_status": null,
           "sdk_outcome": "ProtocolError: ('Connection broken: IncompleteRead(64 bytes read, 8388544 more expected)', IncompleteRead(64 bytes read, 8388544 more expected))",
+          "seconds_since_fault": 0.0,
           "wire_error": "IncompleteRead: IncompleteRead(64 bytes read, 8388544 more expected)"
         },
         {
           "body_bytes_received": 64,
-          "body_excerpt": "operation LookupFileId 7,4243163e90 failed, err: urls not found\n",
+          "body_excerpt": "operation LookupFileId 8,42b8faebec failed, err: urls not found\n",
           "content_length_header": "8388608",
           "content_type_header": "text/plain; charset=utf-8",
           "http_status": 500,
           "readable": false,
+          "sample_index": 1,
+          "scheduled_offset_s": 0.25,
           "sdk_http_status": null,
           "sdk_outcome": "ProtocolError: ('Connection broken: IncompleteRead(64 bytes read, 8388544 more expected)', IncompleteRead(64 bytes read, 8388544 more expected))",
+          "seconds_since_fault": 5.162,
           "wire_error": "IncompleteRead: IncompleteRead(64 bytes read, 8388544 more expected)"
         },
         {
           "body_bytes_received": 64,
-          "body_excerpt": "operation LookupFileId 7,4243163e90 failed, err: urls not found\n",
+          "body_excerpt": "operation LookupFileId 8,42b8faebec failed, err: urls not found\n",
           "content_length_header": "8388608",
           "content_type_header": "text/plain; charset=utf-8",
           "http_status": 500,
           "readable": false,
+          "sample_index": 2,
+          "scheduled_offset_s": 0.5,
           "sdk_http_status": null,
           "sdk_outcome": "ProtocolError: ('Connection broken: IncompleteRead(64 bytes read, 8388544 more expected)', IncompleteRead(64 bytes read, 8388544 more expected))",
+          "seconds_since_fault": 10.334,
           "wire_error": "IncompleteRead: IncompleteRead(64 bytes read, 8388544 more expected)"
         },
         {
           "body_bytes_received": 64,
-          "body_excerpt": "operation LookupFileId 7,4243163e90 failed, err: urls not found\n",
+          "body_excerpt": "operation LookupFileId 8,42b8faebec failed, err: urls not found\n",
           "content_length_header": "8388608",
           "content_type_header": "text/plain; charset=utf-8",
           "http_status": 500,
           "readable": false,
+          "sample_index": 3,
+          "scheduled_offset_s": 1.0,
           "sdk_http_status": null,
           "sdk_outcome": "ProtocolError: ('Connection broken: IncompleteRead(64 bytes read, 8388544 more expected)', IncompleteRead(64 bytes read, 8388544 more expected))",
+          "seconds_since_fault": 15.494,
           "wire_error": "IncompleteRead: IncompleteRead(64 bytes read, 8388544 more expected)"
         },
         {
           "body_bytes_received": 64,
-          "body_excerpt": "operation LookupFileId 7,4243163e90 failed, err: urls not found\n",
+          "body_excerpt": "operation LookupFileId 8,42b8faebec failed, err: urls not found\n",
           "content_length_header": "8388608",
           "content_type_header": "text/plain; charset=utf-8",
           "http_status": 500,
           "readable": false,
+          "sample_index": 4,
+          "scheduled_offset_s": 2.0,
           "sdk_http_status": null,
           "sdk_outcome": "ProtocolError: ('Connection broken: IncompleteRead(64 bytes read, 8388544 more expected)', IncompleteRead(64 bytes read, 8388544 more expected))",
+          "seconds_since_fault": 20.66,
+          "wire_error": "IncompleteRead: IncompleteRead(64 bytes read, 8388544 more expected)"
+        },
+        {
+          "body_bytes_received": 64,
+          "body_excerpt": "operation LookupFileId 8,42b8faebec failed, err: urls not found\n",
+          "content_length_header": "8388608",
+          "content_type_header": "text/plain; charset=utf-8",
+          "http_status": 500,
+          "readable": false,
+          "sample_index": 5,
+          "scheduled_offset_s": 4.0,
+          "sdk_http_status": null,
+          "sdk_outcome": "ProtocolError: ('Connection broken: IncompleteRead(64 bytes read, 8388544 more expected)', IncompleteRead(64 bytes read, 8388544 more expected))",
+          "seconds_since_fault": 25.808,
+          "wire_error": "IncompleteRead: IncompleteRead(64 bytes read, 8388544 more expected)"
+        },
+        {
+          "body_bytes_received": 64,
+          "body_excerpt": "operation LookupFileId 8,42b8faebec failed, err: urls not found\n",
+          "content_length_header": "8388608",
+          "content_type_header": "text/plain; charset=utf-8",
+          "http_status": 500,
+          "readable": false,
+          "sample_index": 6,
+          "scheduled_offset_s": 8.0,
+          "sdk_http_status": null,
+          "sdk_outcome": "ProtocolError: ('Connection broken: IncompleteRead(64 bytes read, 8388544 more expected)', IncompleteRead(64 bytes read, 8388544 more expected))",
+          "seconds_since_fault": 30.953,
           "wire_error": "IncompleteRead: IncompleteRead(64 bytes read, 8388544 more expected)"
         }
       ],
-      "stopped_server": "bench-swfs-vol3",
+      "shared_device_notice": null,
+      "stopped_server": "bench-swfs-vol1",
       "storage": {
         "caveat": "measured with a single large object; not a general figure for workloads dominated by small objects",
         "logical_bytes": 268435456,
         "method": "du -sb over every bench-<system>_* docker volume, before and after one incompressible object of logical_bytes",
         "object_count": 1,
         "per_volume_after": {
-          "bench-seaweedfs_swfs-d0": 130034142,
-          "bench-seaweedfs_swfs-d1": 171977988,
-          "bench-seaweedfs_swfs-d2": 138422894,
-          "bench-seaweedfs_swfs-d3": 96479048,
-          "bench-seaweedfs_swfs-meta": 55741
+          "bench-seaweedfs_swfs-d0": 142617270,
+          "bench-seaweedfs_swfs-d1": 109062176,
+          "bench-seaweedfs_swfs-d2": 159394860,
+          "bench-seaweedfs_swfs-d3": 125839766,
+          "bench-seaweedfs_swfs-meta": 55725
         },
         "per_volume_baseline": {
           "bench-seaweedfs_swfs-d0": 8228,
@@ -318,16 +466,16 @@
           "bench-seaweedfs_swfs-d3": 8228,
           "bench-seaweedfs_swfs-meta": 52760
         },
-        "physical_bytes_after": 536969813,
+        "physical_bytes_after": 536969797,
         "physical_bytes_baseline": 85672,
-        "physical_bytes_delta": 536884141,
+        "physical_bytes_delta": 536884125,
         "system": "seaweedfs",
         "usable_ratio": 0.5,
         "usable_ratio_gross": 0.4999
       },
       "volumes_held_by_victim": [
-        7,
-        8
+        8,
+        9
       ]
     },
     "fault_tolerated": true,
@@ -347,12 +495,13 @@
       "object_path_after_kill": "absent",
       "payload_bytes": 8388608,
       "read_after_fault_error": null,
-      "read_after_fault_seconds": 0.06,
+      "read_after_fault_seconds": 0.05,
       "redundancy_limit_action": "/data1, /data2 wiped as well (parity 1 cannot cover 2 lost drives)",
       "redundancy_limit_distinct_outcomes": {
-        "HTTP 404 / NoSuchBucket": 1,
-        "HTTP 503 / SlowDownRead": 4
+        "HTTP 404 / NoSuchBucket": 2,
+        "HTTP 503 / SlowDownRead": 5
       },
+      "redundancy_limit_method": "Samples scheduled at 0, 0.25, 0.5, 1, 2, 4 and 8 seconds after the fault; seconds_since_fault records when each was actually taken. Each sample is TWO separate requests: http_status, content_length_header, content_type_header and body_bytes_received come from a raw signed GET, while sdk_outcome and sdk_http_status come from a separate boto3 GET immediately after it -- so a compound label such as 'HTTP 200 / ResponseStreamingError' describes two requests taken moments apart, not one response. The counts in redundancy_limit_distinct_outcomes therefore describe THIS SCHEDULE, not observed frequencies: an outcome confined to a sub-second window appears once because only the earliest samples land inside that window.",
       "redundancy_limit_read_failed": true,
       "redundancy_limit_samples": [
         {
@@ -362,8 +511,25 @@
           "content_type_header": "application/xml",
           "http_status": 404,
           "readable": false,
+          "sample_index": 0,
+          "scheduled_offset_s": 0.0,
           "sdk_http_status": 404,
           "sdk_outcome": "ClientError (NoSuchBucket): The specified bucket does not exist",
+          "seconds_since_fault": 0.0,
+          "wire_error": null
+        },
+        {
+          "body_bytes_received": 350,
+          "body_excerpt": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><Key>probe.bin</Key><BucketName>durability</BucketName><Resource>/durabilit",
+          "content_length_header": "350",
+          "content_type_header": "application/xml",
+          "http_status": 404,
+          "readable": false,
+          "sample_index": 1,
+          "scheduled_offset_s": 0.25,
+          "sdk_http_status": 404,
+          "sdk_outcome": "ClientError (NoSuchBucket): The specified bucket does not exist",
+          "seconds_since_fault": 0.26,
           "wire_error": null
         },
         {
@@ -373,8 +539,11 @@
           "content_type_header": "application/xml",
           "http_status": 503,
           "readable": false,
+          "sample_index": 2,
+          "scheduled_offset_s": 0.5,
           "sdk_http_status": 503,
           "sdk_outcome": "ClientError (SlowDownRead): Resource requested is unreadable, please reduce your request rate",
+          "seconds_since_fault": 0.51,
           "wire_error": null
         },
         {
@@ -384,8 +553,11 @@
           "content_type_header": "application/xml",
           "http_status": 503,
           "readable": false,
+          "sample_index": 3,
+          "scheduled_offset_s": 1.0,
           "sdk_http_status": 503,
           "sdk_outcome": "ClientError (SlowDownRead): Resource requested is unreadable, please reduce your request rate",
+          "seconds_since_fault": 1.49,
           "wire_error": null
         },
         {
@@ -395,8 +567,11 @@
           "content_type_header": "application/xml",
           "http_status": 503,
           "readable": false,
+          "sample_index": 4,
+          "scheduled_offset_s": 2.0,
           "sdk_http_status": 503,
           "sdk_outcome": "ClientError (SlowDownRead): Resource requested is unreadable, please reduce your request rate",
+          "seconds_since_fault": 2.001,
           "wire_error": null
         },
         {
@@ -406,11 +581,29 @@
           "content_type_header": "application/xml",
           "http_status": 503,
           "readable": false,
+          "sample_index": 5,
+          "scheduled_offset_s": 4.0,
           "sdk_http_status": 503,
           "sdk_outcome": "ClientError (SlowDownRead): Resource requested is unreadable, please reduce your request rate",
+          "seconds_since_fault": 4.007,
+          "wire_error": null
+        },
+        {
+          "body_bytes_received": 380,
+          "body_excerpt": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Error><Code>SlowDownRead</Code><Message>Resource requested is unreadable, please reduce your request rate</Message><Key>probe.bin</Key><BucketName>durability</B",
+          "content_length_header": "380",
+          "content_type_header": "application/xml",
+          "http_status": 503,
+          "readable": false,
+          "sample_index": 6,
+          "scheduled_offset_s": 8.0,
+          "sdk_http_status": 503,
+          "sdk_outcome": "ClientError (SlowDownRead): Resource requested is unreadable, please reduce your request rate",
+          "seconds_since_fault": 8.008,
           "wire_error": null
         }
       ],
+      "shared_device_notice": "INFO: WARNING: Host local has more than 1 drives of set. A host failure will result in data becoming unavailable.",
       "storage": {
         "caveat": "measured with a single large object; not a general figure for workloads dominated by small objects",
         "logical_bytes": 268435456,

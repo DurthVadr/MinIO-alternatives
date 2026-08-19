@@ -98,13 +98,28 @@ EXTRA_VICTIM_DRIVES = ("/data1", "/data2")
 # result, not a data-loss result, and the two must not be confused. The
 # elapsed time is recorded either way.
 READ_DEADLINE_S = 60
-# How many times the read is repeated after redundancy has been deliberately
-# exceeded. One sample is not behaviour: a system can answer the same fault
-# several different ways depending on where its healing has got to, and
-# recording one draw as though it were characteristic is how a single error
-# string turns into a published claim about a named product.
-PAST_LIMIT_SAMPLES = 5
-PAST_LIMIT_INTERVAL_S = 2
+# When the read is repeated after redundancy has been deliberately exceeded.
+# One sample is not behaviour, and evenly spaced samples are not behaviour
+# either: the interesting outcomes live in a sub-second window right after the
+# fault, while the systems' error paths settle. A flat 2 s interval put
+# exactly one sample inside that window, which made a schedule artefact
+# ("1 in 5") look like a frequency. These offsets straddle the window
+# deliberately -- four inside or near it, three well outside -- and every
+# sample records the time it was actually taken.
+PAST_LIMIT_OFFSETS_S = (0.0, 0.25, 0.5, 1.0, 2.0, 4.0, 8.0)
+PAST_LIMIT_METHOD = (
+    "Samples scheduled at 0, 0.25, 0.5, 1, 2, 4 and 8 seconds after the fault; "
+    "seconds_since_fault records when each was actually taken. Each sample is "
+    "TWO separate requests: http_status, content_length_header, "
+    "content_type_header and body_bytes_received come from a raw signed GET, "
+    "while sdk_outcome and sdk_http_status come from a separate boto3 GET "
+    "immediately after it -- so a compound label such as "
+    "'HTTP 200 / ResponseStreamingError' describes two requests taken moments "
+    "apart, not one response. The counts in "
+    "redundancy_limit_distinct_outcomes therefore describe THIS SCHEDULE, not "
+    "observed frequencies: an outcome confined to a sub-second window appears "
+    "once because only the earliest samples land inside that window."
+)
 
 
 # --------------------------------------------------------------------------
@@ -250,12 +265,14 @@ def sdk_read_once(s3):
     }
 
 
-# Non-default settings a system needed before its c2 config would run at all.
-# These ride along in durability.json rather than living only in a report,
-# because durability.json is the only artifact the report generator reads: a
-# caveat that depends on a later task remembering a paragraph is a caveat that
-# will eventually go missing. Keyed by the compose env var that carries it, so
-# removing the setting removes the disclosure with it.
+# Non-default settings a system needed before its c2 config would run at all,
+# and what the other three do in the identical condition. This rides along in
+# durability.json rather than living only in a report, because durability.json
+# is the only artifact the report generator reads: a caveat that depends on a
+# later task remembering a paragraph is a caveat that will eventually go
+# missing, and the peer comparison is a maturity finding in its own right --
+# for a system this study questions elsewhere, a safety check the incumbent
+# lacks is evidence in the other direction.
 CONFIG_CAVEATS = {
     ("rustfs", "RUSTFS_UNSAFE_BYPASS_DISK_CHECK"): {
         "setting": "RUSTFS_UNSAFE_BYPASS_DISK_CHECK=true",
@@ -264,39 +281,194 @@ CONFIG_CAVEATS = {
             "physical device, which every c2 config in this study does -- four "
             "drives on one host disk."
         ),
-        "refusal_message": (
-            "local erasure endpoints must use distinct physical disks; detected "
-            "shared devices [vda => /data0, /data1, /data2, /data3] ... Set "
-            "RUSTFS_UNSAFE_BYPASS_DISK_CHECK=true only for local testing or CI "
-            "to bypass this safety check"
-        ),
-        "peer_behaviour": (
-            "MinIO and Silo meet the identical shared-disk condition and only "
-            "warn ('Host local has more than 1 drives of set. A host failure "
-            "will result in data becoming unavailable.'); SeaweedFS has no "
-            "equivalent check at all. The bypass equalises the comparison "
-            "rather than relaxing it for RustFS -- and RustFS is the only one "
-            "of the four that treats the condition as an error."
-        ),
         "also_required": (
             "user: root -- the image runs as uid 10001 and only /data is "
             "pre-owned by it, so fresh /data0../data3 mounts are root-owned "
             "and the server dies with 'Io error: Permission denied (os error "
             "13)'. compose/minio.yaml needs the same workaround."
         ),
+        "effect_on_comparison": (
+            "Equalises rather than relaxes. The alternatives were to drop "
+            "RustFS from config 2, or to give it four real devices the other "
+            "three did not get; both would have made the comparison less fair, "
+            "not more."
+        ),
+        "shared_device_check_by_system": {
+            "rustfs": (
+                "ERROR: refuses to start in erasure mode, names the offending "
+                "device and st_dev, and points at the exact opt-out. Captured "
+                "live in refusal_observed below."
+            ),
+            "minio": (
+                "WARNING only, then starts: 'Host local has more than 1 drives "
+                "of set. A host failure will result in data becoming "
+                "unavailable.' Observed line in minio's own record under "
+                "evidence.shared_device_notice."
+            ),
+            "silo": (
+                "WARNING only, then starts -- same message as MinIO, same code "
+                "base. Observed line in silo's own record under "
+                "evidence.shared_device_notice."
+            ),
+            "seaweedfs": (
+                "NO equivalent check. Its four volume servers each use a single "
+                "directory, all on the one host disk, and nothing in its "
+                "startup output remarks on it -- evidence.shared_device_notice "
+                "is null in its record."
+            ),
+        },
+        "finding": (
+            "RustFS is the only one of the four that treats a shared physical "
+            "device under erasure coding as a startup error rather than a "
+            "warning or silence. It is also the youngest of the four (rc). A "
+            "maturity row built from this data should say so in both "
+            "directions."
+        ),
     },
 }
 
 
+# What each system says, if anything, about its drives sharing one physical
+# device. Every c2 config in this study is four drives on one host disk, so
+# this is the same condition for all four -- what differs is the reaction, and
+# that difference is a maturity signal worth recording per system rather than
+# asserting once in prose.
+SHARED_DEVICE_PATTERNS = (
+    re.compile(r"more than 1 drives of set", re.I),
+    re.compile(r"distinct physical disks", re.I),
+    re.compile(r"shared device", re.I),
+)
+
+
+def shared_device_notice(container):
+    """The line the running system emitted about sharing one physical device,
+    or None if it said nothing. Observed from its own output."""
+    logs = subprocess.run(
+        ["docker", "logs", container], capture_output=True, text=True
+    )
+    output = logs.stdout + logs.stderr
+    for line in output.splitlines():
+        if any(pattern.search(line) for pattern in SHARED_DEVICE_PATTERNS):
+            return line.strip()
+    return None
+
+
+def rustfs_refusal_without_bypass():
+    """Start RustFS in erasure mode with the bypass removed and record what it
+    does. Observed, not quoted from memory: the message in the artifact is
+    captured from a real start on this host, so it can be re-verified."""
+    probe = subprocess.run(
+        [
+            "docker", "run", "--rm", "--user", "root",
+            "-e", f"RUSTFS_ACCESS_KEY={ACCESS_KEY}",
+            "-e", f"RUSTFS_SECRET_KEY={SECRET_KEY}",
+            "-e", "RUSTFS_VOLUMES=/data0,/data1,/data2,/data3",
+            # The digest the c2 service itself uses -- never a second copy of
+            # it here, which tests/test_images_lock.py could not see.
+            c2_service("rustfs")["image"],
+        ],
+        capture_output=True,
+        text=True,
+        timeout=180,
+    )
+    output = (probe.stdout + probe.stderr).strip()
+    message = next(
+        (line for line in output.splitlines() if "distinct physical disks" in line),
+        None,
+    )
+    assert probe.returncode != 0 and message, (
+        "rustfs started in erasure mode on a shared device without the bypass "
+        f"(rc={probe.returncode}); the caveat below would be describing "
+        f"something that no longer happens. Output: {output[-1000:]}"
+    )
+    return {
+        "probe": (
+            "docker run --user root -e RUSTFS_VOLUMES=/data0,/data1,/data2,"
+            "/data3 <rustfs image>, no RUSTFS_UNSAFE_BYPASS_DISK_CHECK"
+        ),
+        "exit_code": probe.returncode,
+        "message": message,
+    }
+
+
+CAVEAT_PROBES = {
+    ("rustfs", "RUSTFS_UNSAFE_BYPASS_DISK_CHECK"): rustfs_refusal_without_bypass,
+}
+
+
+def service_env_names(service):
+    """The env var names a compose service declares, in either form Compose
+    accepts.
+
+    Mapping form ({VAR: value}) and list form (["VAR=value"]) are both legal
+    and mean the same thing. Reading only the mapping form made the caveat
+    disclosure fail OPEN: rewriting the file in list form would silently drop
+    the disclosure while the setting it discloses stayed in effect, and the
+    artifact would then positively assert a clean configuration. An
+    unrecognised shape raises rather than quietly returning nothing.
+    """
+    environment = service.get("environment")
+    if environment is None:
+        return set()
+    if isinstance(environment, dict):
+        return set(environment)
+    if isinstance(environment, list):
+        return {str(entry).partition("=")[0].strip() for entry in environment}
+    raise AssertionError(
+        f"unrecognised compose environment shape: {type(environment).__name__}"
+    )
+
+
+def container_env_names(container):
+    """Env var names actually present in a RUNNING container.
+
+    Ground truth, independent of how the compose file spells things. The
+    compose file is still parsed and the two are required to agree, so a
+    parsing gap surfaces as a failure instead of as a missing disclosure.
+    """
+    probe = subprocess.run(
+        ["docker", "inspect", container, "--format", "{{json .Config.Env}}"],
+        capture_output=True,
+        text=True,
+    )
+    assert probe.returncode == 0, f"cannot inspect {container}: {probe.stderr.strip()}"
+    return {entry.partition("=")[0] for entry in json.loads(probe.stdout)}
+
+
 def configuration_caveats(system):
-    """Caveats that apply to this system's c2 config, derived from the compose
-    file so a caveat cannot outlive the setting that caused it."""
-    environment = c2_service(system).get("environment") or {}
-    return [
-        caveat
-        for (caveat_system, variable), caveat in CONFIG_CAVEATS.items()
-        if caveat_system == system and variable in environment
-    ]
+    """Caveats that apply to this system's c2 config.
+
+    Emitted from the running container's environment and cross-checked against
+    the compose file. Both must agree: a caveat that can vanish while the
+    setting it discloses remains in effect is worse than no caveat at all.
+    """
+    declared = service_env_names(c2_service(system))
+    running = container_env_names(CONTAINER[system])
+    caveats = []
+    for (caveat_system, variable), caveat in CONFIG_CAVEATS.items():
+        if caveat_system != system:
+            continue
+        mismatch = (
+            "declared in compose but absent from the running container"
+            if variable in declared
+            else "set in the running container but not visible in the parsed "
+                 "compose environment"
+        )
+        assert (variable in declared) == (variable in running), (
+            f"{system}: {variable} is {mismatch} -- the disclosure would be "
+            f"wrong either way, so this fails rather than guessing"
+        )
+        if variable in running:
+            entry = dict(caveat)
+            probe = CAVEAT_PROBES.get((caveat_system, variable))
+            if probe is not None:
+                entry["refusal_observed"] = probe()
+            entry["verified"] = (
+                "present in the running container's environment (docker inspect) "
+                "and in its compose service"
+            )
+            caveats.append(entry)
+    return caveats
 
 
 def read_probe(s3, deadline_s):
@@ -373,22 +545,32 @@ def outcome_key(sample):
     return f"HTTP {status if status is not None else 'none'} / {code}"
 
 
-def sample_past_limit_reads(s3, samples=PAST_LIMIT_SAMPLES):
+def sample_past_limit_reads(s3, fault_at, offsets=PAST_LIMIT_OFFSETS_S):
     """Read the object repeatedly after redundancy has been exceeded.
 
     Each sample is two requests -- one raw, one through boto3 -- so the wire's
     account and the SDK's account of roughly the same moment are both on
-    record. Several samples because a system can answer the same fault more
-    than one way depending on where its healing has got to; every distinct
-    outcome is returned with its count, rather than one draw standing in for
-    the system's behaviour.
+    record. Samples are taken on a schedule measured from the fault itself,
+    and each one carries its index and the time it was actually taken, because
+    WHEN a sample was drawn turns out to matter more than how many were: the
+    unstable answers are confined to the first second or so after the loss.
+    Every distinct outcome is returned with its count, and the count is only
+    interpretable against PAST_LIMIT_METHOD, which travels with it.
     """
     observed = []
-    for index in range(samples):
+    for index, offset in enumerate(offsets):
+        remaining = (fault_at + offset) - time.monotonic()
+        if remaining > 0:
+            time.sleep(remaining)
+        elapsed = time.monotonic() - fault_at
         wire = raw_probe()
-        observed.append({**wire, **sdk_read_once(s3)})
-        if index + 1 < samples:
-            time.sleep(PAST_LIMIT_INTERVAL_S)
+        observed.append({
+            "sample_index": index,
+            "scheduled_offset_s": offset,
+            "seconds_since_fault": round(elapsed, 3),
+            **wire,
+            **sdk_read_once(s3),
+        })
     counts = {}
     for sample in observed:
         key = outcome_key(sample)
@@ -572,7 +754,47 @@ def exceed_redundancy(system, replicas, evidence):
 
 
 # --------------------------------------------------------------------------
-# the test
+# the tests
+# --------------------------------------------------------------------------
+def test_caveat_disclosure_survives_either_compose_env_form():
+    """A disclosure that can vanish while the thing it discloses stays in
+    effect is worse than no disclosure: the artifact would then positively
+    assert a clean configuration.
+
+    Compose accepts `environment` as a mapping or as a list, and the two mean
+    the same thing. This test pins that the caveat lookup sees both, and that
+    a shape it does not recognise fails loudly rather than returning nothing.
+    """
+    service = yaml.safe_load((COMPOSE_DIR / "rustfs.yaml").read_text())["services"][
+        C2_SERVICE["rustfs"]
+    ]
+    mapping_form = service_env_names(service)
+    assert "RUSTFS_UNSAFE_BYPASS_DISK_CHECK" in mapping_form
+
+    as_list = dict(service)
+    as_list["environment"] = [f"{k}={v}" for k, v in service["environment"].items()]
+    assert service_env_names(as_list) == mapping_form
+
+    with_bare_names = dict(service)
+    with_bare_names["environment"] = ["RUSTFS_UNSAFE_BYPASS_DISK_CHECK"]
+    assert service_env_names(with_bare_names) == {"RUSTFS_UNSAFE_BYPASS_DISK_CHECK"}
+
+    unrecognised = dict(service)
+    unrecognised["environment"] = "RUSTFS_UNSAFE_BYPASS_DISK_CHECK=true"
+    with pytest.raises(AssertionError):
+        service_env_names(unrecognised)
+
+
+def test_every_declared_caveat_describes_a_real_setting():
+    """Each caveat is keyed on a setting that must actually be in the config it
+    describes -- otherwise the artifact carries a disclosure about nothing."""
+    for system, variable in CONFIG_CAVEATS:
+        assert variable in service_env_names(c2_service(system)), (
+            f"CONFIG_CAVEATS declares {variable} for {system}, but its c2 "
+            f"service does not set it"
+        )
+
+
 # --------------------------------------------------------------------------
 @pytest.mark.parametrize("system", C2_SYSTEMS)
 def test_survives_single_device_loss(system, durability_results):
@@ -620,6 +842,19 @@ def test_survives_single_device_loss(system, durability_results):
             seaweed_mechanism(replicas) if system == "seaweedfs" else ec_mechanism(system)
         )
 
+        caveats = configuration_caveats(system)
+        # A null notice would be misread for a system whose check is switched
+        # off by one of its own caveats: it did not stay silent, it was
+        # silenced, and the refusal it would otherwise print is recorded next
+        # to the caveat.
+        notice = shared_device_notice(CONTAINER[system])
+        if notice is None and any("refusal_observed" in c for c in caveats):
+            notice = (
+                "silent while the caveat setting is in effect; without it the "
+                "server refuses to start -- see "
+                "configuration_caveats[].refusal_observed"
+            )
+
         device_killed, evidence = kill_one_device(system, replicas)
         tolerated, seconds, error = read_probe(s3, deadline_s=READ_DEADLINE_S)
 
@@ -638,9 +873,13 @@ def test_survives_single_device_loss(system, durability_results):
             # say which it is showing instead of implying a general figure.
             "usable_ratio_object_bytes": storage["logical_bytes"],
             "usable_ratio_object_count": storage["object_count"],
-            "configuration_caveats": configuration_caveats(system),
+            "configuration_caveats": caveats,
             "evidence": {
                 "payload_bytes": len(PAYLOAD),
+                # Same condition for all four systems (four drives, one host
+                # disk); the reaction differs, and the difference is the
+                # finding. See configuration_caveats on the rustfs record.
+                "shared_device_notice": notice,
                 "read_after_fault_seconds": round(seconds, 2),
                 "read_after_fault_error": error,
                 "storage": storage,
@@ -653,13 +892,15 @@ def test_survives_single_device_loss(system, durability_results):
         )
 
         action = exceed_redundancy(system, replicas, evidence)
-        samples, distinct_outcomes = sample_past_limit_reads(s3)
+        fault_at = time.monotonic()
+        samples, distinct_outcomes = sample_past_limit_reads(s3, fault_at)
         still_readable = any(sample["readable"] for sample in samples)
         durability_results[system]["evidence"].update({
             "redundancy_limit_action": action,
             "redundancy_limit_read_failed": not still_readable,
-            "redundancy_limit_samples": samples,
+            "redundancy_limit_method": PAST_LIMIT_METHOD,
             "redundancy_limit_distinct_outcomes": distinct_outcomes,
+            "redundancy_limit_samples": samples,
         })
         assert not still_readable, (
             f"{system}: the object is still readable after {action}. The fault "
