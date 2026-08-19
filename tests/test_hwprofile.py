@@ -87,3 +87,31 @@ def test_collision_guard_rejects_mismatched_fingerprint():
         assert test_profile_id in result.stderr
     finally:
         shutil.rmtree(results_dir, ignore_errors=True)
+
+
+def test_collision_guard_replaces_corrupt_record():
+    # A corrupt/unparseable record protects nothing, so the guard should
+    # warn and replace it rather than block every future run -- unlike a
+    # genuine fingerprint mismatch, this must not abort.
+    test_profile_id = f"test-guard-corrupt-{uuid.uuid4().hex[:8]}"
+    results_dir = ROOT / "results" / test_profile_id
+    guard_file = results_dir / "hardware-profile.json"
+    try:
+        results_dir.mkdir(parents=True)
+        guard_file.write_text("{not valid json")
+
+        result = subprocess.run(
+            [str(SCRIPT)],
+            capture_output=True,
+            text=True,
+            env={**os.environ, "PROFILE_ID": test_profile_id},
+        )
+
+        assert result.returncode == 0, result.stderr
+        assert "unreadable" in result.stderr.lower()
+
+        replaced = json.loads(guard_file.read_text())
+        assert replaced["profile_id"] == test_profile_id
+        assert re.match(r"^[0-9a-f]{12}$", replaced["fingerprint"])
+    finally:
+        shutil.rmtree(results_dir, ignore_errors=True)
