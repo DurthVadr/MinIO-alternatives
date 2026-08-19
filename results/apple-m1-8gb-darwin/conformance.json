@@ -1,0 +1,734 @@
+{
+  "hardware_profile": {
+    "captured_at": "2026-08-19T23:08:23Z",
+    "container_runtime": {
+      "client_version": "29.1.2",
+      "kind": "docker",
+      "server_version": "29.1.3",
+      "storage_driver": "overlayfs",
+      "vm_arch": "aarch64",
+      "vm_cpus": 8,
+      "vm_ram_bytes": 4109217792
+    },
+    "disk": {
+      "host_free_bytes": 35077390336
+    },
+    "fingerprint": "140c82422064",
+    "host": {
+      "arch": "arm64",
+      "cpu_cores": 8,
+      "cpu_model": "Apple M1",
+      "os": "darwin",
+      "os_version": "25.4.0",
+      "ram_bytes": 8589934592
+    },
+    "images": {
+      "minio": "sha256:3804726ba5769adfbe099766e70477003ae0bfd1e1a3ea12268ef830f3ffdf39",
+      "rustfs": "sha256:821d0244341a9c679b36f87d7b863e8e77cab86f712c26c6ba9ad5669f222e72",
+      "seaweedfs": "sha256:52ec3c86db6e726a6cfa74031051ce3fab28fdef1dcebec0574ddeb14670b453",
+      "silo": "sha256:2c00469c7b3b9537115727c059873869ec6d82b15fcabf8c75ff9961ae89161f"
+    },
+    "profile_id": "apple-m1-8gb-darwin",
+    "schema": 1,
+    "warp": "v1.6.1"
+  },
+  "matrix": {
+    "minio": {
+      "test_bucket_policy_can_be_set_and_read": {
+        "detail": "bucket policy stored and read back with the same statement",
+        "status": "supported"
+      },
+      "test_copy_object_preserves_content": {
+        "detail": "server-side copy produced a byte-identical object",
+        "status": "supported"
+      },
+      "test_delete_creates_a_delete_marker": {
+        "detail": "delete marker created; 1 underlying version(s) still listed",
+        "status": "supported"
+      },
+      "test_get_if_match_on_stale_etag_is_rejected": {
+        "detail": "412 PreconditionFailed on a stale ETag",
+        "observed": {
+          "http_status": 412,
+          "message": "At least one of the pre-conditions you specified did not hold",
+          "s3_error_code": "PreconditionFailed"
+        },
+        "status": "supported"
+      },
+      "test_get_if_none_match_returns_304": {
+        "detail": "304 Not Modified for a matching ETag",
+        "observed": {
+          "http_status": 304,
+          "message": "Not Modified",
+          "s3_error_code": "304"
+        },
+        "status": "supported"
+      },
+      "test_list_objects_v2_caps_at_1000_keys": {
+        "detail": "1000-key page cap with IsTruncated, and all 1001 keys reachable by paging",
+        "status": "supported"
+      },
+      "test_list_objects_v2_delimiter_yields_common_prefixes": {
+        "detail": "delimiter rollup returns a/ and b/ with only the top-level key inline",
+        "status": "supported"
+      },
+      "test_list_objects_v2_paginates_with_continuation_token": {
+        "detail": "continuation token honoured; pages are 50 keys and lexicographically ordered",
+        "status": "supported"
+      },
+      "test_multipart_abort_releases_the_upload": {
+        "detail": "aborted upload is no longer listed and left no object behind",
+        "status": "supported"
+      },
+      "test_multipart_accepts_out_of_order_parts": {
+        "detail": "parts uploaded 2-then-1 reassembled in manifest order",
+        "status": "supported"
+      },
+      "test_multipart_rejects_undersized_part": {
+        "detail": "EntityTooSmall on a 1 MiB non-final part (HTTP 400 EntityTooSmall: Your proposed upload is smaller than the minimum allowed object size.)",
+        "observed": {
+          "http_status": 400,
+          "message": "Your proposed upload is smaller than the minimum allowed object size.",
+          "s3_error_code": "EntityTooSmall"
+        },
+        "status": "supported"
+      },
+      "test_multipart_upload_completes": {
+        "detail": "two-part 10 MiB upload completed and reassembled byte-identical",
+        "status": "supported"
+      },
+      "test_object_lock_bucket_can_be_created": {
+        "detail": "object lock enabled at bucket creation and reported back as Enabled",
+        "status": "supported"
+      },
+      "test_object_lock_legal_hold_blocks_deletion": {
+        "detail": "an object under legal hold could not be deleted (HTTP 400 InvalidRequest: Object is WORM protected and cannot be overwritten) and the hold reads back as ON",
+        "observed": {
+          "http_status": 400,
+          "message": "Object is WORM protected and cannot be overwritten",
+          "s3_error_code": "InvalidRequest"
+        },
+        "status": "supported"
+      },
+      "test_object_lock_retention_blocks_deletion": {
+        "detail": "the retained version could not be deleted (HTTP 400 InvalidRequest: Object is WORM protected and cannot be overwritten) and is still readable",
+        "observed": {
+          "http_status": 400,
+          "message": "Object is WORM protected and cannot be overwritten",
+          "s3_error_code": "InvalidRequest"
+        },
+        "status": "supported"
+      },
+      "test_object_tagging_roundtrip": {
+        "detail": "object tag set written and read back unchanged",
+        "status": "supported"
+      },
+      "test_presigned_get_url_works": {
+        "detail": "presigned GET honoured and returned the object bytes",
+        "status": "supported"
+      },
+      "test_presigned_put_url_works": {
+        "detail": "presigned PUT honoured and the body stored intact",
+        "status": "supported"
+      },
+      "test_presigned_url_expiry_is_enforced": {
+        "detail": "the URL served while valid and answered HTTP 403 after expiry",
+        "observed": {
+          "body_after_expiry": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Error><Code>AccessDenied</Code><Message>Request has expired</Message><Key>presign/expiring</Key><BucketName>conf-561fb5a34b27</BucketName><Resource>/conf-561fb5",
+          "http_status_after_expiry": 403
+        },
+        "status": "supported"
+      },
+      "test_put_if_match_on_current_etag_succeeds": {
+        "detail": "If-Match on the current ETag accepted and applied",
+        "status": "supported"
+      },
+      "test_put_if_match_on_stale_etag_is_rejected": {
+        "detail": "412 PreconditionFailed on a stale ETag",
+        "observed": {
+          "http_status": 412,
+          "message": "At least one of the pre-conditions you specified did not hold",
+          "s3_error_code": "PreconditionFailed"
+        },
+        "status": "supported"
+      },
+      "test_put_if_none_match_allows_first_write": {
+        "detail": "If-None-Match: * accepted on a new key; body stored intact",
+        "status": "supported"
+      },
+      "test_put_if_none_match_rejects_overwrite": {
+        "detail": "412 PreconditionFailed on an existing key; object left unchanged",
+        "observed": {
+          "http_status": 412,
+          "message": "At least one of the pre-conditions you specified did not hold",
+          "s3_error_code": "PreconditionFailed"
+        },
+        "status": "supported"
+      },
+      "test_range_get_returns_the_requested_slice": {
+        "detail": "bytes=2-5 returned the four requested bytes with HTTP 206",
+        "status": "supported"
+      },
+      "test_sse_c_encryption_roundtrip": {
+        "detail": "SSE-C (customer-provided key) was refused for a deployment prerequisite this harness does not provide to any system: HTTP 400 InvalidRequest: Requests specifying Server Side Encryption with Customer provided keys must be made over a secure connection.. AWS S3 refuses SSE-C over plain HTTP as well, so refusing it here is conformant behaviour that this harness's plain-HTTP endpoint simply cannot exercise -- read this cell as not-exercisable, not as a missing feature.",
+        "observed": {
+          "http_status": 400,
+          "message": "Requests specifying Server Side Encryption with Customer provided keys must be made over a secure connection.",
+          "s3_error_code": "InvalidRequest"
+        },
+        "status": "partial"
+      },
+      "test_sse_s3_encryption_is_accepted": {
+        "detail": "SSE-S3 (ServerSideEncryption=AES256) was refused for a deployment prerequisite this harness does not provide to any system: HTTP 501 NotImplemented: Server side encryption specified but KMS is not configured (KMS not configured for a server side encrypted objects). The stacks run every system in its default single-node configuration with no key manager wired up, so this says nothing about whether the feature exists once one is.",
+        "observed": {
+          "http_status": 501,
+          "message": "Server side encryption specified but KMS is not configured (KMS not configured for a server side encrypted objects)",
+          "s3_error_code": "NotImplemented"
+        },
+        "status": "partial"
+      },
+      "test_versioned_get_returns_the_older_version": {
+        "detail": "an overwritten version reads back byte-identical by version id",
+        "status": "supported"
+      },
+      "test_versioning_can_be_enabled": {
+        "detail": "versioning enabled and read back as Enabled",
+        "status": "supported"
+      },
+      "test_versioning_keeps_prior_versions": {
+        "detail": "2 versions retained with distinct version ids",
+        "status": "supported"
+      }
+    },
+    "rustfs": {
+      "test_bucket_policy_can_be_set_and_read": {
+        "detail": "bucket policy stored and read back with the same statement",
+        "status": "supported"
+      },
+      "test_copy_object_preserves_content": {
+        "detail": "server-side copy produced a byte-identical object",
+        "status": "supported"
+      },
+      "test_delete_creates_a_delete_marker": {
+        "detail": "delete marker created; 1 underlying version(s) still listed",
+        "status": "supported"
+      },
+      "test_get_if_match_on_stale_etag_is_rejected": {
+        "detail": "412 PreconditionFailed on a stale ETag",
+        "observed": {
+          "http_status": 412,
+          "message": "",
+          "s3_error_code": "PreconditionFailed"
+        },
+        "status": "supported"
+      },
+      "test_get_if_none_match_returns_304": {
+        "detail": "304 Not Modified for a matching ETag",
+        "observed": {
+          "http_status": 304,
+          "message": "Not Modified",
+          "s3_error_code": "304"
+        },
+        "status": "supported"
+      },
+      "test_list_objects_v2_caps_at_1000_keys": {
+        "detail": "1000-key page cap with IsTruncated, and all 1001 keys reachable by paging",
+        "status": "supported"
+      },
+      "test_list_objects_v2_delimiter_yields_common_prefixes": {
+        "detail": "delimiter rollup returns a/ and b/ with only the top-level key inline",
+        "status": "supported"
+      },
+      "test_list_objects_v2_paginates_with_continuation_token": {
+        "detail": "continuation token honoured; pages are 50 keys and lexicographically ordered",
+        "status": "supported"
+      },
+      "test_multipart_abort_releases_the_upload": {
+        "detail": "aborted upload is no longer listed and left no object behind",
+        "status": "supported"
+      },
+      "test_multipart_accepts_out_of_order_parts": {
+        "detail": "parts uploaded 2-then-1 reassembled in manifest order",
+        "status": "supported"
+      },
+      "test_multipart_rejects_undersized_part": {
+        "detail": "EntityTooSmall on a 1 MiB non-final part (HTTP 400 EntityTooSmall: Your proposed upload is smaller than the minimum allowed object size.)",
+        "observed": {
+          "http_status": 400,
+          "message": "Your proposed upload is smaller than the minimum allowed object size.",
+          "s3_error_code": "EntityTooSmall"
+        },
+        "status": "supported"
+      },
+      "test_multipart_upload_completes": {
+        "detail": "two-part 10 MiB upload completed and reassembled byte-identical",
+        "status": "supported"
+      },
+      "test_object_lock_bucket_can_be_created": {
+        "detail": "object lock enabled at bucket creation and reported back as Enabled",
+        "status": "supported"
+      },
+      "test_object_lock_legal_hold_blocks_deletion": {
+        "detail": "an object under legal hold could not be deleted (HTTP 403 AccessDenied: Object has a legal hold and cannot be deleted. Remove the legal hold first.) and the hold reads back as ON",
+        "observed": {
+          "http_status": 403,
+          "message": "Object has a legal hold and cannot be deleted. Remove the legal hold first.",
+          "s3_error_code": "AccessDenied"
+        },
+        "status": "supported"
+      },
+      "test_object_lock_retention_blocks_deletion": {
+        "detail": "the retained version could not be deleted (HTTP 403 AccessDenied: Object is under COMPLIANCE retention and cannot be deleted until 2026-08-19 23:10:09.0 +00:00:00) and is still readable",
+        "observed": {
+          "http_status": 403,
+          "message": "Object is under COMPLIANCE retention and cannot be deleted until 2026-08-19 23:10:09.0 +00:00:00",
+          "s3_error_code": "AccessDenied"
+        },
+        "status": "supported"
+      },
+      "test_object_tagging_roundtrip": {
+        "detail": "object tag set written and read back unchanged",
+        "status": "supported"
+      },
+      "test_presigned_get_url_works": {
+        "detail": "presigned GET honoured and returned the object bytes",
+        "status": "supported"
+      },
+      "test_presigned_put_url_works": {
+        "detail": "presigned PUT honoured and the body stored intact",
+        "status": "supported"
+      },
+      "test_presigned_url_expiry_is_enforced": {
+        "detail": "the URL served while valid and answered HTTP 403 after expiry",
+        "observed": {
+          "body_after_expiry": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Error><Code>AccessDenied</Code><Message>Request has expired</Message></Error>",
+          "http_status_after_expiry": 403
+        },
+        "status": "supported"
+      },
+      "test_put_if_match_on_current_etag_succeeds": {
+        "detail": "If-Match on the current ETag accepted and applied",
+        "status": "supported"
+      },
+      "test_put_if_match_on_stale_etag_is_rejected": {
+        "detail": "412 PreconditionFailed on a stale ETag",
+        "observed": {
+          "http_status": 412,
+          "message": "At least one of the pre-conditions you specified did not hold",
+          "s3_error_code": "PreconditionFailed"
+        },
+        "status": "supported"
+      },
+      "test_put_if_none_match_allows_first_write": {
+        "detail": "If-None-Match: * accepted on a new key; body stored intact",
+        "status": "supported"
+      },
+      "test_put_if_none_match_rejects_overwrite": {
+        "detail": "412 PreconditionFailed on an existing key; object left unchanged",
+        "observed": {
+          "http_status": 412,
+          "message": "At least one of the pre-conditions you specified did not hold",
+          "s3_error_code": "PreconditionFailed"
+        },
+        "status": "supported"
+      },
+      "test_range_get_returns_the_requested_slice": {
+        "detail": "bytes=2-5 returned the four requested bytes with HTTP 206",
+        "status": "supported"
+      },
+      "test_sse_c_encryption_roundtrip": {
+        "detail": "SSE-C round-trips with the key and is refused without it -- accepted over plain HTTP, which AWS S3 itself rejects",
+        "status": "supported"
+      },
+      "test_sse_s3_encryption_is_accepted": {
+        "detail": "SSE-S3 (ServerSideEncryption=AES256) was refused for a deployment prerequisite this harness does not provide to any system: HTTP 400 InvalidRequest: SSE-S3 requires RUSTFS_SSE_S3_MASTER_KEY to be set to a base64-encoded 32-byte key when KMS is not configured. The stacks run every system in its default single-node configuration with no key manager wired up, so this says nothing about whether the feature exists once one is.",
+        "observed": {
+          "http_status": 400,
+          "message": "SSE-S3 requires RUSTFS_SSE_S3_MASTER_KEY to be set to a base64-encoded 32-byte key when KMS is not configured",
+          "s3_error_code": "InvalidRequest"
+        },
+        "status": "partial"
+      },
+      "test_versioned_get_returns_the_older_version": {
+        "detail": "an overwritten version reads back byte-identical by version id",
+        "status": "supported"
+      },
+      "test_versioning_can_be_enabled": {
+        "detail": "versioning enabled and read back as Enabled",
+        "status": "supported"
+      },
+      "test_versioning_keeps_prior_versions": {
+        "detail": "2 versions retained with distinct version ids",
+        "status": "supported"
+      }
+    },
+    "seaweedfs": {
+      "test_bucket_policy_can_be_set_and_read": {
+        "detail": "PutBucketPolicy was rejected: HTTP 501 NotImplemented: A header you provided implies functionality that is not implemented",
+        "observed": {
+          "http_status": 501,
+          "message": "A header you provided implies functionality that is not implemented",
+          "s3_error_code": "NotImplemented"
+        },
+        "status": "unsupported"
+      },
+      "test_copy_object_preserves_content": {
+        "detail": "server-side copy produced a byte-identical object",
+        "status": "supported"
+      },
+      "test_delete_creates_a_delete_marker": {
+        "detail": "bucket versioning, which this behaviour requires, could not be enabled: HTTP 409 BucketAlreadyExists: The requested bucket name is not available. The bucket name can not be an existing collection, and the bucket namespace is shared by all users of the system. Please select a different name and try again.. GetBucketVersioning on the same bucket answers HTTP 200 with status None.",
+        "observed": {
+          "get_bucket_versioning": "GetBucketVersioning on the same bucket answers HTTP 200 with status None",
+          "http_status": 409,
+          "message": "The requested bucket name is not available. The bucket name can not be an existing collection, and the bucket namespace is shared by all users of the system. Please select a different name and try again.",
+          "s3_error_code": "BucketAlreadyExists"
+        },
+        "status": "unsupported"
+      },
+      "test_get_if_match_on_stale_etag_is_rejected": {
+        "detail": "412 PreconditionFailed on a stale ETag",
+        "observed": {
+          "http_status": 412,
+          "message": "At least one of the pre-conditions you specified did not hold",
+          "s3_error_code": "PreconditionFailed"
+        },
+        "status": "supported"
+      },
+      "test_get_if_none_match_returns_304": {
+        "detail": "304 Not Modified for a matching ETag",
+        "observed": {
+          "http_status": 304,
+          "message": "Not Modified",
+          "s3_error_code": "304"
+        },
+        "status": "supported"
+      },
+      "test_list_objects_v2_caps_at_1000_keys": {
+        "detail": "an unbounded listing over 1001 keys returned 1001 key(s) with IsTruncated=False; AWS returns exactly 1000 and marks it truncated",
+        "observed": {
+          "is_truncated": false,
+          "keys_returned": 1001
+        },
+        "status": "partial"
+      },
+      "test_list_objects_v2_delimiter_yields_common_prefixes": {
+        "detail": "delimiter rollup returns a/ and b/ with only the top-level key inline",
+        "status": "supported"
+      },
+      "test_list_objects_v2_paginates_with_continuation_token": {
+        "detail": "continuation token honoured; pages are 50 keys and lexicographically ordered",
+        "status": "supported"
+      },
+      "test_multipart_abort_releases_the_upload": {
+        "detail": "aborted upload is no longer listed and left no object behind",
+        "status": "supported"
+      },
+      "test_multipart_accepts_out_of_order_parts": {
+        "detail": "parts uploaded 2-then-1 reassembled in manifest order",
+        "status": "supported"
+      },
+      "test_multipart_rejects_undersized_part": {
+        "detail": "an upload whose first part was 1 MiB completed without error (2097152 bytes written); AWS rejects this with EntityTooSmall, so the part-size minimum is not enforced",
+        "observed": {
+          "content_length": 2097152,
+          "http_status": 200
+        },
+        "status": "unsupported"
+      },
+      "test_multipart_upload_completes": {
+        "detail": "two-part 10 MiB upload completed and reassembled byte-identical",
+        "status": "supported"
+      },
+      "test_object_lock_bucket_can_be_created": {
+        "detail": "CreateBucket accepted ObjectLockEnabledForBucket and GetObjectLockConfiguration answers HTTP 200, but the configuration it returns is {} -- the header was accepted and ignored",
+        "observed": {
+          "http_status": 200,
+          "object_lock_configuration": "{}"
+        },
+        "status": "partial"
+      },
+      "test_object_lock_legal_hold_blocks_deletion": {
+        "detail": "an object put with ObjectLockLegalHoldStatus=ON was deleted without error; it is gone afterwards and GetObjectLegalHold reports None. The hold is not enforced. The object also carries no version id, so there is no version behind the hold.",
+        "observed": {
+          "deleted": true,
+          "legal_hold_read_back": null,
+          "still_readable": false,
+          "version_id": null
+        },
+        "status": "unsupported"
+      },
+      "test_object_lock_retention_blocks_deletion": {
+        "detail": "the retained object was deleted: DeleteObject returned success while the retention still had ~119s to run, and the object is gone afterwards. COMPLIANCE retention is not enforced. The object also has no version id -- PutObject returned none and none is listed -- so there is no immutable version behind the key at all.",
+        "observed": {
+          "deleted": true,
+          "still_readable": false,
+          "version_id": null
+        },
+        "status": "unsupported"
+      },
+      "test_object_tagging_roundtrip": {
+        "detail": "object tag set written and read back unchanged",
+        "status": "supported"
+      },
+      "test_presigned_get_url_works": {
+        "detail": "presigned GET honoured and returned the object bytes",
+        "status": "supported"
+      },
+      "test_presigned_put_url_works": {
+        "detail": "presigned PUT honoured and the body stored intact",
+        "status": "supported"
+      },
+      "test_presigned_url_expiry_is_enforced": {
+        "detail": "the URL served while valid and answered HTTP 403 after expiry",
+        "observed": {
+          "body_after_expiry": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Error><Code>AccessDenied</Code><Message>Request has expired</Message><Resource>/conf-bdf06a10d38b/presign/expiring</Resource><RequestId>1787180942968332179</Req",
+          "http_status_after_expiry": 403
+        },
+        "status": "supported"
+      },
+      "test_put_if_match_on_current_etag_succeeds": {
+        "detail": "If-Match on the current ETag accepted and applied",
+        "status": "supported"
+      },
+      "test_put_if_match_on_stale_etag_is_rejected": {
+        "detail": "stale If-Match (\"d2edfbd157c1b22c42bedca6609130c7\") accepted: the write landed on top of a version the client had never seen (object now b'second write - must not land'). A read-modify-write loop loses updates here.",
+        "observed": {
+          "http_status": 200,
+          "stored_after": "second write - must not land"
+        },
+        "status": "unsupported"
+      },
+      "test_put_if_none_match_allows_first_write": {
+        "detail": "If-None-Match: * accepted on a new key; body stored intact",
+        "status": "supported"
+      },
+      "test_put_if_none_match_rejects_overwrite": {
+        "detail": "precondition ignored: the second PUT returned success and the object was overwritten (now b'second write - must not land'). A lakehouse commit would be lost here, silently.",
+        "observed": {
+          "http_status": 200,
+          "stored_after": "second write - must not land"
+        },
+        "status": "unsupported"
+      },
+      "test_range_get_returns_the_requested_slice": {
+        "detail": "bytes=2-5 returned the four requested bytes with HTTP 206",
+        "status": "supported"
+      },
+      "test_sse_c_encryption_roundtrip": {
+        "detail": "the object round-trips with the customer key, but a GET carrying no key at all returns HTTP 200 and the plaintext (b'conformance payload'): the SSE-C headers were accepted and ignored and the object is stored unencrypted",
+        "observed": {
+          "body": "conformance payload",
+          "http_status": 200,
+          "returned_plaintext": true
+        },
+        "status": "partial"
+      },
+      "test_sse_s3_encryption_is_accepted": {
+        "detail": "the PUT was accepted and the body round-trips, but the object reports ServerSideEncryption=None -- the request was accepted and ignored",
+        "observed": {
+          "server_side_encryption": null
+        },
+        "status": "partial"
+      },
+      "test_versioned_get_returns_the_older_version": {
+        "detail": "bucket versioning, which this behaviour requires, could not be enabled: HTTP 409 BucketAlreadyExists: The requested bucket name is not available. The bucket name can not be an existing collection, and the bucket namespace is shared by all users of the system. Please select a different name and try again.. GetBucketVersioning on the same bucket answers HTTP 200 with status None.",
+        "observed": {
+          "get_bucket_versioning": "GetBucketVersioning on the same bucket answers HTTP 200 with status None",
+          "http_status": 409,
+          "message": "The requested bucket name is not available. The bucket name can not be an existing collection, and the bucket namespace is shared by all users of the system. Please select a different name and try again.",
+          "s3_error_code": "BucketAlreadyExists"
+        },
+        "status": "unsupported"
+      },
+      "test_versioning_can_be_enabled": {
+        "detail": "bucket versioning, which this behaviour requires, could not be enabled: HTTP 409 BucketAlreadyExists: The requested bucket name is not available. The bucket name can not be an existing collection, and the bucket namespace is shared by all users of the system. Please select a different name and try again.. GetBucketVersioning on the same bucket answers HTTP 200 with status None.",
+        "observed": {
+          "get_bucket_versioning": "GetBucketVersioning on the same bucket answers HTTP 200 with status None",
+          "http_status": 409,
+          "message": "The requested bucket name is not available. The bucket name can not be an existing collection, and the bucket namespace is shared by all users of the system. Please select a different name and try again.",
+          "s3_error_code": "BucketAlreadyExists"
+        },
+        "status": "unsupported"
+      },
+      "test_versioning_keeps_prior_versions": {
+        "detail": "bucket versioning, which this behaviour requires, could not be enabled: HTTP 409 BucketAlreadyExists: The requested bucket name is not available. The bucket name can not be an existing collection, and the bucket namespace is shared by all users of the system. Please select a different name and try again.. GetBucketVersioning on the same bucket answers HTTP 200 with status None.",
+        "observed": {
+          "get_bucket_versioning": "GetBucketVersioning on the same bucket answers HTTP 200 with status None",
+          "http_status": 409,
+          "message": "The requested bucket name is not available. The bucket name can not be an existing collection, and the bucket namespace is shared by all users of the system. Please select a different name and try again.",
+          "s3_error_code": "BucketAlreadyExists"
+        },
+        "status": "unsupported"
+      }
+    },
+    "silo": {
+      "test_bucket_policy_can_be_set_and_read": {
+        "detail": "bucket policy stored and read back with the same statement",
+        "status": "supported"
+      },
+      "test_copy_object_preserves_content": {
+        "detail": "server-side copy produced a byte-identical object",
+        "status": "supported"
+      },
+      "test_delete_creates_a_delete_marker": {
+        "detail": "delete marker created; 1 underlying version(s) still listed",
+        "status": "supported"
+      },
+      "test_get_if_match_on_stale_etag_is_rejected": {
+        "detail": "412 PreconditionFailed on a stale ETag",
+        "observed": {
+          "http_status": 412,
+          "message": "At least one of the pre-conditions you specified did not hold",
+          "s3_error_code": "PreconditionFailed"
+        },
+        "status": "supported"
+      },
+      "test_get_if_none_match_returns_304": {
+        "detail": "304 Not Modified for a matching ETag",
+        "observed": {
+          "http_status": 304,
+          "message": "Not Modified",
+          "s3_error_code": "304"
+        },
+        "status": "supported"
+      },
+      "test_list_objects_v2_caps_at_1000_keys": {
+        "detail": "1000-key page cap with IsTruncated, and all 1001 keys reachable by paging",
+        "status": "supported"
+      },
+      "test_list_objects_v2_delimiter_yields_common_prefixes": {
+        "detail": "delimiter rollup returns a/ and b/ with only the top-level key inline",
+        "status": "supported"
+      },
+      "test_list_objects_v2_paginates_with_continuation_token": {
+        "detail": "continuation token honoured; pages are 50 keys and lexicographically ordered",
+        "status": "supported"
+      },
+      "test_multipart_abort_releases_the_upload": {
+        "detail": "aborted upload is no longer listed and left no object behind",
+        "status": "supported"
+      },
+      "test_multipart_accepts_out_of_order_parts": {
+        "detail": "parts uploaded 2-then-1 reassembled in manifest order",
+        "status": "supported"
+      },
+      "test_multipart_rejects_undersized_part": {
+        "detail": "EntityTooSmall on a 1 MiB non-final part (HTTP 400 EntityTooSmall: Your proposed upload is smaller than the minimum allowed object size.)",
+        "observed": {
+          "http_status": 400,
+          "message": "Your proposed upload is smaller than the minimum allowed object size.",
+          "s3_error_code": "EntityTooSmall"
+        },
+        "status": "supported"
+      },
+      "test_multipart_upload_completes": {
+        "detail": "two-part 10 MiB upload completed and reassembled byte-identical",
+        "status": "supported"
+      },
+      "test_object_lock_bucket_can_be_created": {
+        "detail": "object lock enabled at bucket creation and reported back as Enabled",
+        "status": "supported"
+      },
+      "test_object_lock_legal_hold_blocks_deletion": {
+        "detail": "an object under legal hold could not be deleted (HTTP 400 InvalidRequest: Object is WORM protected and cannot be overwritten) and the hold reads back as ON",
+        "observed": {
+          "http_status": 400,
+          "message": "Object is WORM protected and cannot be overwritten",
+          "s3_error_code": "InvalidRequest"
+        },
+        "status": "supported"
+      },
+      "test_object_lock_retention_blocks_deletion": {
+        "detail": "the retained version could not be deleted (HTTP 400 InvalidRequest: Object is WORM protected and cannot be overwritten) and is still readable",
+        "observed": {
+          "http_status": 400,
+          "message": "Object is WORM protected and cannot be overwritten",
+          "s3_error_code": "InvalidRequest"
+        },
+        "status": "supported"
+      },
+      "test_object_tagging_roundtrip": {
+        "detail": "object tag set written and read back unchanged",
+        "status": "supported"
+      },
+      "test_presigned_get_url_works": {
+        "detail": "presigned GET honoured and returned the object bytes",
+        "status": "supported"
+      },
+      "test_presigned_put_url_works": {
+        "detail": "presigned PUT honoured and the body stored intact",
+        "status": "supported"
+      },
+      "test_presigned_url_expiry_is_enforced": {
+        "detail": "the URL served while valid and answered HTTP 403 after expiry",
+        "observed": {
+          "body_after_expiry": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Error><Code>AccessDenied</Code><Message>Request has expired</Message><Key>presign/expiring</Key><BucketName>conf-ad6c09bba7d9</BucketName><Resource>/conf-ad6c09",
+          "http_status_after_expiry": 403
+        },
+        "status": "supported"
+      },
+      "test_put_if_match_on_current_etag_succeeds": {
+        "detail": "If-Match on the current ETag accepted and applied",
+        "status": "supported"
+      },
+      "test_put_if_match_on_stale_etag_is_rejected": {
+        "detail": "412 PreconditionFailed on a stale ETag",
+        "observed": {
+          "http_status": 412,
+          "message": "At least one of the pre-conditions you specified did not hold",
+          "s3_error_code": "PreconditionFailed"
+        },
+        "status": "supported"
+      },
+      "test_put_if_none_match_allows_first_write": {
+        "detail": "If-None-Match: * accepted on a new key; body stored intact",
+        "status": "supported"
+      },
+      "test_put_if_none_match_rejects_overwrite": {
+        "detail": "412 PreconditionFailed on an existing key; object left unchanged",
+        "observed": {
+          "http_status": 412,
+          "message": "At least one of the pre-conditions you specified did not hold",
+          "s3_error_code": "PreconditionFailed"
+        },
+        "status": "supported"
+      },
+      "test_range_get_returns_the_requested_slice": {
+        "detail": "bytes=2-5 returned the four requested bytes with HTTP 206",
+        "status": "supported"
+      },
+      "test_sse_c_encryption_roundtrip": {
+        "detail": "SSE-C (customer-provided key) was refused for a deployment prerequisite this harness does not provide to any system: HTTP 400 InvalidRequest: Requests specifying Server Side Encryption with Customer provided keys must be made over a secure connection.. AWS S3 refuses SSE-C over plain HTTP as well, so refusing it here is conformant behaviour that this harness's plain-HTTP endpoint simply cannot exercise -- read this cell as not-exercisable, not as a missing feature.",
+        "observed": {
+          "http_status": 400,
+          "message": "Requests specifying Server Side Encryption with Customer provided keys must be made over a secure connection.",
+          "s3_error_code": "InvalidRequest"
+        },
+        "status": "partial"
+      },
+      "test_sse_s3_encryption_is_accepted": {
+        "detail": "SSE-S3 (ServerSideEncryption=AES256) was refused for a deployment prerequisite this harness does not provide to any system: HTTP 501 NotImplemented: Server side encryption specified but KMS is not configured (KMS not configured for a server side encrypted objects). The stacks run every system in its default single-node configuration with no key manager wired up, so this says nothing about whether the feature exists once one is.",
+        "observed": {
+          "http_status": 501,
+          "message": "Server side encryption specified but KMS is not configured (KMS not configured for a server side encrypted objects)",
+          "s3_error_code": "NotImplemented"
+        },
+        "status": "partial"
+      },
+      "test_versioned_get_returns_the_older_version": {
+        "detail": "an overwritten version reads back byte-identical by version id",
+        "status": "supported"
+      },
+      "test_versioning_can_be_enabled": {
+        "detail": "versioning enabled and read back as Enabled",
+        "status": "supported"
+      },
+      "test_versioning_keeps_prior_versions": {
+        "detail": "2 versions retained with distinct version ids",
+        "status": "supported"
+      }
+    }
+  },
+  "schema": 1
+}
