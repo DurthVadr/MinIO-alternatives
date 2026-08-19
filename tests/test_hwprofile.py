@@ -1,6 +1,9 @@
 import json
+import os
 import re
+import shutil
 import subprocess
+import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -50,3 +53,37 @@ def test_images_are_embedded_from_lock():
 
 def test_captured_at_is_iso8601_utc():
     assert re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$", profile()["captured_at"])
+
+
+def test_fingerprint_is_present_and_12_hex_chars():
+    fp = profile()["fingerprint"]
+    assert re.match(r"^[0-9a-f]{12}$", fp), f"not a 12-hex-char fingerprint: {fp}"
+
+
+def test_fingerprint_is_stable_across_invocations():
+    # Same machine, two separate subprocess runs -> identical fingerprint.
+    assert profile()["fingerprint"] == profile()["fingerprint"]
+
+
+def test_collision_guard_rejects_mismatched_fingerprint():
+    # A profile_id that has never been used before, so this test cannot
+    # collide with the real machine profile recorded under results/.
+    test_profile_id = f"test-guard-{uuid.uuid4().hex[:8]}"
+    results_dir = ROOT / "results" / test_profile_id
+    guard_file = results_dir / "hardware-profile.json"
+    try:
+        results_dir.mkdir(parents=True)
+        guard_file.write_text(json.dumps({"fingerprint": "deadbeef0000"}))
+
+        result = subprocess.run(
+            [str(SCRIPT)],
+            capture_output=True,
+            text=True,
+            env={**os.environ, "PROFILE_ID": test_profile_id},
+        )
+
+        assert result.returncode != 0
+        assert "fingerprint" in result.stderr.lower()
+        assert test_profile_id in result.stderr
+    finally:
+        shutil.rmtree(results_dir, ignore_errors=True)
