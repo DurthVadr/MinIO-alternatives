@@ -12,6 +12,15 @@ Then destroy one device MORE than the configuration tolerates and require the
 read to fail: without that second step, a green result would not distinguish
 "reconstructed from redundancy" from "the fault injection did nothing".
 
+That past-limit read is sampled several times, over the wire as well as
+through the SDK, and every distinct outcome is recorded with its count. Two
+reasons, both learned the hard way. A system can answer the same fault more
+than one way depending on where its healing has got to, so one error string
+published as characteristic behaviour is a claim the evidence does not
+support. And an SDK-only record loses the HTTP status entirely when a server
+answers with a malformed error response -- which is how a 500 with an
+overstated Content-Length once got written up as a 200 with a truncated body.
+
 Observations land in results/<profile_id>/durability.json (see conftest.py),
 which the report consumes.
 
@@ -26,6 +35,7 @@ import os
 import re
 import subprocess
 import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -36,6 +46,7 @@ from botocore.auth import S3SigV4Auth
 from botocore.awsrequest import AWSRequest
 from botocore.client import Config
 from botocore.credentials import Credentials
+from botocore.exceptions import ClientError
 
 ROOT = Path(__file__).resolve().parents[1]
 STACK = str(ROOT / "bench" / "stack.sh")
@@ -87,9 +98,13 @@ EXTRA_VICTIM_DRIVES = ("/data1", "/data2")
 # result, not a data-loss result, and the two must not be confused. The
 # elapsed time is recorded either way.
 READ_DEADLINE_S = 60
-# How long the read keeps being retried after redundancy has been deliberately
-# exceeded, before the object is called genuinely unreadable.
-UNREADABLE_DEADLINE_S = 10
+# How many times the read is repeated after redundancy has been deliberately
+# exceeded. One sample is not behaviour: a system can answer the same fault
+# several different ways depending on where its healing has got to, and
+# recording one draw as though it were characteristic is how a single error
+# string turns into a published claim about a named product.
+PAST_LIMIT_SAMPLES = 5
+PAST_LIMIT_INTERVAL_S = 2
 
 
 # --------------------------------------------------------------------------
@@ -124,9 +139,22 @@ def docker_exec(container, script):
 
 
 def path_bytes(container, path):
-    """Apparent size of a path inside a container; 0 if it does not exist."""
-    rc, out = docker_exec(container, f"du -sb {path} 2>/dev/null | cut -f1")
-    return int(out) if rc == 0 and out.isdigit() else 0
+    """Apparent size of a path inside a container, in bytes.
+
+    Returns None when the path does not exist -- never 0, and never a silent 0
+    for a measurement that failed. The two used to be indistinguishable, which
+    put a failed measurement on the pass side of the post-wipe check ("the
+    object's bytes are gone") for the wrong reason. A measurement that cannot
+    be made at all now raises instead of quietly answering zero.
+    """
+    rc, out = docker_exec(
+        container, f"if [ -e {path} ]; then du -sb {path} | cut -f1; else echo MISSING; fi"
+    )
+    assert rc == 0, f"could not measure {path} in {container} (rc={rc})"
+    if out == "MISSING":
+        return None
+    assert out.isdigit(), f"unparseable du output for {path} in {container}: {out!r}"
+    return int(out)
 
 
 def admin_backend():
@@ -182,6 +210,95 @@ def configured_replication(system="seaweedfs"):
     return match.group(1)
 
 
+def sdk_read_once(s3):
+    """One read through boto3 -- what an S3 SDK user would see.
+
+    Returns a dict rather than a bare string so the HTTP status survives when
+    the SDK has one. It often does not: a malformed error response surfaces as
+    a transport error with no status and no S3 code at all, which is precisely
+    the shape that got SeaweedFS's behaviour misdescribed once already.
+    """
+    try:
+        body = s3.get_object(Bucket=BUCKET, Key=KEY)["Body"].read()
+    except ClientError as exc:
+        error = exc.response.get("Error", {})
+        return {
+            "readable": False,
+            "sdk_outcome": (
+                f"ClientError ({error.get('Code')}): {error.get('Message')}"
+            ),
+            "sdk_http_status": exc.response.get("ResponseMetadata", {}).get(
+                "HTTPStatusCode"
+            ),
+        }
+    except Exception as exc:  # noqa: BLE001 - any failure to read is the result
+        return {
+            "readable": False,
+            "sdk_outcome": f"{type(exc).__name__}: {exc}",
+            "sdk_http_status": None,
+        }
+    if body == PAYLOAD:
+        return {
+            "readable": True,
+            "sdk_outcome": "object read back byte-identical",
+            "sdk_http_status": 200,
+        }
+    return {
+        "readable": False,
+        "sdk_outcome": f"content mismatch: {len(body)} of {len(PAYLOAD)} bytes",
+        "sdk_http_status": 200,
+    }
+
+
+# Non-default settings a system needed before its c2 config would run at all.
+# These ride along in durability.json rather than living only in a report,
+# because durability.json is the only artifact the report generator reads: a
+# caveat that depends on a later task remembering a paragraph is a caveat that
+# will eventually go missing. Keyed by the compose env var that carries it, so
+# removing the setting removes the disclosure with it.
+CONFIG_CAVEATS = {
+    ("rustfs", "RUSTFS_UNSAFE_BYPASS_DISK_CHECK"): {
+        "setting": "RUSTFS_UNSAFE_BYPASS_DISK_CHECK=true",
+        "why": (
+            "RustFS refuses to start in erasure mode when its drives share a "
+            "physical device, which every c2 config in this study does -- four "
+            "drives on one host disk."
+        ),
+        "refusal_message": (
+            "local erasure endpoints must use distinct physical disks; detected "
+            "shared devices [vda => /data0, /data1, /data2, /data3] ... Set "
+            "RUSTFS_UNSAFE_BYPASS_DISK_CHECK=true only for local testing or CI "
+            "to bypass this safety check"
+        ),
+        "peer_behaviour": (
+            "MinIO and Silo meet the identical shared-disk condition and only "
+            "warn ('Host local has more than 1 drives of set. A host failure "
+            "will result in data becoming unavailable.'); SeaweedFS has no "
+            "equivalent check at all. The bypass equalises the comparison "
+            "rather than relaxing it for RustFS -- and RustFS is the only one "
+            "of the four that treats the condition as an error."
+        ),
+        "also_required": (
+            "user: root -- the image runs as uid 10001 and only /data is "
+            "pre-owned by it, so fresh /data0../data3 mounts are root-owned "
+            "and the server dies with 'Io error: Permission denied (os error "
+            "13)'. compose/minio.yaml needs the same workaround."
+        ),
+    },
+}
+
+
+def configuration_caveats(system):
+    """Caveats that apply to this system's c2 config, derived from the compose
+    file so a caveat cannot outlive the setting that caused it."""
+    environment = c2_service(system).get("environment") or {}
+    return [
+        caveat
+        for (caveat_system, variable), caveat in CONFIG_CAVEATS.items()
+        if caveat_system == system and variable in environment
+    ]
+
+
 def read_probe(s3, deadline_s):
     """Read the probe object, retrying until deadline_s has elapsed.
 
@@ -192,16 +309,91 @@ def read_probe(s3, deadline_s):
     start = time.monotonic()
     last_error = None
     while True:
-        try:
-            body = s3.get_object(Bucket=BUCKET, Key=KEY)["Body"].read()
-            if body == PAYLOAD:
-                return True, time.monotonic() - start, None
-            last_error = f"content mismatch: {len(body)} of {len(PAYLOAD)} bytes"
-        except Exception as exc:  # noqa: BLE001 - any failure to read is the result
-            last_error = f"{type(exc).__name__}: {exc}"
+        attempt = sdk_read_once(s3)
+        if attempt["readable"]:
+            return True, time.monotonic() - start, None
+        last_error = attempt["sdk_outcome"]
         if time.monotonic() - start >= deadline_s:
             return False, time.monotonic() - start, last_error
         time.sleep(2)
+
+
+def raw_probe():
+    """Fetch the probe object over plain HTTP and record what the wire said.
+
+    The SDK view is not enough evidence on its own. When a server answers a
+    failed read with a malformed response -- a status the SDK never surfaces,
+    a Content-Length that overstates the body, a non-XML error payload --
+    boto3 reports only a transport error, and reading intent into that is
+    guesswork. This records the status line, the Content-Length claimed, and
+    how many bytes actually arrived, so the artifact cannot be misread.
+    """
+    url = f"{ENDPOINT}/{BUCKET}/{KEY}"
+    signed = AWSRequest(method="GET", url=url, data=b"")
+    S3SigV4Auth(Credentials(ACCESS_KEY, SECRET_KEY), "s3", "us-east-1").add_auth(signed)
+    request = urllib.request.Request(url, headers=dict(signed.headers))
+    sample = {
+        "http_status": None,
+        "content_length_header": None,
+        "content_type_header": None,
+        "body_bytes_received": None,
+        "body_excerpt": None,
+        "wire_error": None,
+    }
+    try:
+        response = urllib.request.urlopen(request, timeout=30)
+    except urllib.error.HTTPError as exc:
+        response = exc  # a non-2xx is still a real response, headers and all
+    except Exception as exc:  # noqa: BLE001
+        sample["wire_error"] = f"{type(exc).__name__}: {exc}"
+        return sample
+    with response:
+        sample["http_status"] = response.status
+        sample["content_length_header"] = response.headers.get("Content-Length")
+        sample["content_type_header"] = response.headers.get("Content-Type")
+        try:
+            body = response.read()
+        except Exception as exc:  # noqa: BLE001 - a truncated body is the finding
+            sample["wire_error"] = f"{type(exc).__name__}: {exc}"
+            body = getattr(exc, "partial", b"")
+        sample["body_bytes_received"] = len(body)
+        if body != PAYLOAD:
+            sample["body_excerpt"] = body[:200].decode("utf-8", "replace")
+    return sample
+
+
+def outcome_key(sample):
+    """A short, countable label for one past-limit read."""
+    if sample["readable"]:
+        return "object read back byte-identical"
+    sdk = sample["sdk_outcome"] or ""
+    match = re.search(r"\(([A-Za-z]+)\)", sdk)
+    code = match.group(1) if match else (sdk.split(":")[0] or "unknown")
+    status = sample["http_status"]
+    return f"HTTP {status if status is not None else 'none'} / {code}"
+
+
+def sample_past_limit_reads(s3, samples=PAST_LIMIT_SAMPLES):
+    """Read the object repeatedly after redundancy has been exceeded.
+
+    Each sample is two requests -- one raw, one through boto3 -- so the wire's
+    account and the SDK's account of roughly the same moment are both on
+    record. Several samples because a system can answer the same fault more
+    than one way depending on where its healing has got to; every distinct
+    outcome is returned with its count, rather than one draw standing in for
+    the system's behaviour.
+    """
+    observed = []
+    for index in range(samples):
+        wire = raw_probe()
+        observed.append({**wire, **sdk_read_once(s3)})
+        if index + 1 < samples:
+            time.sleep(PAST_LIMIT_INTERVAL_S)
+    counts = {}
+    for sample in observed:
+        key = outcome_key(sample)
+        counts[key] = counts.get(key, 0) + 1
+    return observed, counts
 
 
 # --------------------------------------------------------------------------
@@ -285,9 +477,10 @@ def kill_one_device(system, replicas):
         # it: otherwise "survived" could just mean nothing was lost.
         object_before = path_bytes(container, f"{VICTIM_DRIVE}/{BUCKET}")
         drive_before = path_bytes(container, VICTIM_DRIVE)
-        assert object_before > 0, (
-            f"{system}: {VICTIM_DRIVE} holds no data for bucket {BUCKET}, so "
-            f"destroying it would not be a fault at all"
+        assert object_before is not None and object_before > 0, (
+            f"{system}: {VICTIM_DRIVE} holds no data for bucket {BUCKET} "
+            f"(measured {object_before!r}), so destroying it would not be a "
+            f"fault at all"
         )
         # Contents only, dotfiles included (.minio.sys / .rustfs.sys and the
         # format marker live there): the mount survives with nothing on it,
@@ -297,18 +490,25 @@ def kill_one_device(system, replicas):
             f"rm -rf {VICTIM_DRIVE}/..?* {VICTIM_DRIVE}/.[!.]* {VICTIM_DRIVE}/* 2>/dev/null; "
             f"exit 0",
         )
+        # None here is the expected outcome: the bucket's whole tree is gone
+        # from this drive. A real 0 would do as well; anything else has not
+        # been destroyed.
         object_after = path_bytes(container, f"{VICTIM_DRIVE}/{BUCKET}")
         drive_after = path_bytes(container, VICTIM_DRIVE)
-        assert object_after == 0 and drive_after < drive_before, (
+        assert object_after in (None, 0), (
             f"{system}: {VICTIM_DRIVE} still holds {object_after} bytes of "
-            f"{BUCKET} and {drive_after} bytes overall (was {object_before} / "
-            f"{drive_before}); the device was not destroyed"
+            f"{BUCKET} (was {object_before}); the device was not destroyed"
+        )
+        assert drive_after is not None and drive_after < drive_before, (
+            f"{system}: {VICTIM_DRIVE} measures {drive_after!r} after the wipe "
+            f"(was {drive_before}); the device was not destroyed"
         )
         return (
             f"{VICTIM_DRIVE} wiped (1 of 4 drives)",
             {
                 "object_bytes_on_device_before_kill": object_before,
                 "object_bytes_on_device_after_kill": object_after,
+                "object_path_after_kill": "absent" if object_after is None else "present",
                 "device_bytes_before_kill": drive_before,
                 "device_bytes_after_kill": drive_after,
             },
@@ -430,6 +630,15 @@ def test_survives_single_device_loss(system, durability_results):
             "device_killed": device_killed,
             "mechanism": mechanism,
             "usable_ratio": usable_ratio,
+            # The ratio was measured with ONE object of this size, so it
+            # captures stripe and replica overhead but not per-object
+            # metadata -- erasure systems write an xl.meta on all four drives
+            # for every object, so many small objects cost more than this
+            # figure implies. Recorded next to the number so the report can
+            # say which it is showing instead of implying a general figure.
+            "usable_ratio_object_bytes": storage["logical_bytes"],
+            "usable_ratio_object_count": storage["object_count"],
+            "configuration_caveats": configuration_caveats(system),
             "evidence": {
                 "payload_bytes": len(PAYLOAD),
                 "read_after_fault_seconds": round(seconds, 2),
@@ -444,13 +653,13 @@ def test_survives_single_device_loss(system, durability_results):
         )
 
         action = exceed_redundancy(system, replicas, evidence)
-        still_readable, _, unreadable_error = read_probe(
-            s3, deadline_s=UNREADABLE_DEADLINE_S
-        )
+        samples, distinct_outcomes = sample_past_limit_reads(s3)
+        still_readable = any(sample["readable"] for sample in samples)
         durability_results[system]["evidence"].update({
             "redundancy_limit_action": action,
             "redundancy_limit_read_failed": not still_readable,
-            "redundancy_limit_error": unreadable_error,
+            "redundancy_limit_samples": samples,
+            "redundancy_limit_distinct_outcomes": distinct_outcomes,
         })
         assert not still_readable, (
             f"{system}: the object is still readable after {action}. The fault "

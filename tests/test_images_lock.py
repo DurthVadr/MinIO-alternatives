@@ -4,9 +4,10 @@ from pathlib import Path
 
 LOCK = Path(__file__).resolve().parents[1] / "images.lock"
 COMPOSE_DIR = Path(__file__).resolve().parents[1] / "compose"
+BENCH_DIR = Path(__file__).resolve().parents[1] / "bench"
 EXPECTED_SYSTEMS = {"minio", "silo", "rustfs", "seaweedfs"}
 DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
-COMPOSE_DIGEST_RE = re.compile(r"@(sha256:[0-9a-f]{64})")
+PINNED_DIGEST_RE = re.compile(r"@(sha256:[0-9a-f]{64})")
 
 
 def load():
@@ -49,25 +50,41 @@ def test_helper_curl_pinned_by_digest():
     assert DIGEST_RE.match(curl["digest"]), f"curl digest malformed: {curl['digest']}"
 
 
-def test_compose_digests_match_lock():
-    # Ruling A: the digest lives in two places (images.lock and the compose
-    # files) and nothing else checks they agree. Drift in either direction --
-    # a compose file pinned to a digest images.lock does not know about, or a
-    # system image whose compose file has fallen behind a re-locked digest --
+def pinned_files():
+    """Every file in the repo that pins an image by digest.
+
+    Not just compose/: bench/stack.sh and bench/measure-usable-ratio.sh both
+    hardcode the pinned curl helper. Globbing only compose/*.yaml left this
+    test blind to two of the three places a digest appears, so either script
+    could drift from images.lock with nothing failing -- which is exactly the
+    drift Ruling A exists to catch, and exactly what Ruling E (no unpinned
+    helper image) depends on this test to enforce.
+    """
+    return sorted(COMPOSE_DIR.glob("*.yaml")) + sorted(BENCH_DIR.glob("*.sh"))
+
+
+def test_pinned_digests_match_lock():
+    # Ruling A: the digest lives in more than one place (images.lock, the
+    # compose files, the bench scripts) and nothing else checks they agree.
+    # Drift in either direction -- a file pinned to a digest images.lock does
+    # not know about, or a file that has fallen behind a re-locked digest --
     # must fail loudly instead of silently benchmarking the wrong build.
     lock = load()
     known_digests = {e["digest"] for e in lock["images"].values()}
     known_digests |= {e["digest"] for e in lock.get("helpers", {}).values()}
 
-    compose_files = sorted(COMPOSE_DIR.glob("*.yaml"))
-    assert compose_files, f"no compose files found under {COMPOSE_DIR}"
+    files = pinned_files()
+    assert files, f"no compose files or bench scripts found under {COMPOSE_DIR} / {BENCH_DIR}"
 
-    for path in compose_files:
+    seen_any = False
+    for path in files:
         text = path.read_text()
-        for digest in COMPOSE_DIGEST_RE.findall(text):
+        for digest in PINNED_DIGEST_RE.findall(text):
+            seen_any = True
             assert digest in known_digests, (
                 f"{path.name} references {digest}, which is not in images.lock"
             )
+    assert seen_any, "no digest-pinned references found at all -- the guard is inert"
 
     for name, entry in lock["images"].items():
         compose_path = COMPOSE_DIR / f"{name}.yaml"

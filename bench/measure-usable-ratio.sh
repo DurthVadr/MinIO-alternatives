@@ -192,9 +192,18 @@ print(json.dumps({
     "usable_ratio_gross": round(logical / after, 4) if after > 0 else None,
     "per_volume_baseline": breakdown(env["MUR_BASE_BREAKDOWN"]),
     "per_volume_after": breakdown(env["MUR_AFTER_BREAKDOWN"]),
+    # One object of logical_bytes. Stated explicitly because the ratio is a
+    # function of object size: it captures stripe and replica overhead but not
+    # per-object metadata, and erasure systems write an xl.meta on every drive
+    # for every object. A workload of many small objects costs more than this.
+    "object_count": 1,
     "method": (
         "du -sb over every bench-<system>_* docker volume, before and after "
-        "one incompressible object"
+        "one incompressible object of logical_bytes"
+    ),
+    "caveat": (
+        "measured with a single large object; not a general figure for "
+        "workloads dominated by small objects"
     ),
 }, indent=2))
 PYEOF
