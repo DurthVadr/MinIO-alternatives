@@ -1,7 +1,6 @@
-# c1 only. c2's EC flags are verified empirically in Task 3 Step 1 from the
-# CLI's --help output and added there; the four volumes below are declared
-# now only so Task 3 has somewhere to attach them without editing this
-# section.
+# c1: one drive, no redundancy. c2: four drives, erasure coded, survives one
+# drive loss -- see the FINDING block on the rustfs-c2 service below for how
+# that capability was established and what it cost to enable.
 include: [_common.yaml]
 
 # x-net/x-s3-healthcheck are declared locally, not in _common.yaml -- see
@@ -52,6 +51,71 @@ services:
     # `$code` silently resolved to empty (no such compose variable) and the
     # command subshell mangled. `$$` is Compose's escape for a literal `$`,
     # so the container's shell sees the intended `$(...)`/`$code`.
+    healthcheck:
+      <<: *s3-healthcheck
+      test: ["CMD-SHELL", "code=$$(curl -sS -o /dev/null -w '%{http_code}' http://localhost:9000/); echo \"$$code\" | grep -qE '^(200|403)$$'"]
+
+  # ---- c2: one process, four drives, erasure coded ----
+  #
+  # FINDING (Task 3 Step 1 -- does the rc build do multi-device durability at
+  # all?). It does, and it is MinIO's design re-implemented: this is the first
+  # of the brief's three outcomes, not the "no multi-device mode" one.
+  #
+  # `rustfs server --help` lists neither parity nor erasure-set options, which
+  # on its own reads like "no EC here". The binary says otherwise: it carries
+  # RUSTFS_STORAGE_CLASS_STANDARD / _RRS / _OPTIMIZE, the parse error
+  # "Invalid storage class format: <v>. Expected 'Scheme:Number of parity
+  # drives'." (MinIO's EC:N syntax verbatim), per-erasure-set parity/data-shard
+  # metrics, and MinIO's own /minio/admin/v3/{info,storageinfo} endpoints.
+  # Confirmed at runtime rather than inferred: with the settings below the
+  # admin API reports backendType "Erasure", totalDrivesPerSet [4],
+  # standardSCParity 1, onlineDisks 4 -- byte-for-byte the same numbers MinIO
+  # reports for the same config. tests/test_durability.py re-checks that on
+  # every run and then destroys a drive to prove it.
+  #
+  # Two things had to be true before it would start, neither of them guessable
+  # from the documentation:
+  #
+  # 1. RUSTFS_UNSAFE_BYPASS_DISK_CHECK. RustFS refuses erasure mode outright
+  #    when its drives share a physical device: "local erasure endpoints must
+  #    use distinct physical disks; detected shared devices [vda => /data0,
+  #    /data1, /data2, /data3] ... Set RUSTFS_UNSAFE_BYPASS_DISK_CHECK=true
+  #    only for local testing or CI to bypass this safety check" -- then exits.
+  #    Every c2 config in this study puts four "drives" on the one host disk,
+  #    MinIO/Silo included (MinIO only warns: "Host local has more than 1
+  #    drives of set"). So this flag buys equal treatment, not an advantage,
+  #    and the shared-spindle caveat applies to all four systems equally -- it
+  #    belongs in METHODOLOGY.md, not to RustFS alone. Worth recording that
+  #    RustFS is the only one of the four that treats it as an error.
+  #
+  # 2. user: root, the same workaround compose/minio.yaml needed and for the
+  #    same reason. The image runs as uid 10001 (rustfs) and ships /data
+  #    pre-owned by that uid, which is why c1's single volume works untouched;
+  #    /data0../data3 do not exist in the image, so Docker creates them
+  #    root-owned and the entrypoint's `chown ... || true` cannot fix them as
+  #    a non-root user. Symptom: "[FATAL] Server runtime failed: Io error:
+  #    Permission denied (os error 13)".
+  rustfs-c2:
+    profiles: ["c2"]
+    image: rustfs/rustfs@sha256:821d0244341a9c679b36f87d7b863e8e77cab86f712c26c6ba9ad5669f222e72
+    container_name: bench-rustfs
+    <<: *net
+    user: root
+    environment:
+      RUSTFS_ACCESS_KEY: benchuser
+      RUSTFS_SECRET_KEY: benchsecret0
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_VOLUMES: "/data0,/data1,/data2,/data3"
+      RUSTFS_STORAGE_CLASS_STANDARD: "EC:1"
+      RUSTFS_UNSAFE_BYPASS_DISK_CHECK: "true"
+    ports: ["19000:9000"]
+    volumes:
+      - "rustfs-d0:/data0"
+      - "rustfs-d1:/data1"
+      - "rustfs-d2:/data2"
+      - "rustfs-d3:/data3"
+    cpus: 6.0
+    mem_limit: 2048m
     healthcheck:
       <<: *s3-healthcheck
       test: ["CMD-SHELL", "code=$$(curl -sS -o /dev/null -w '%{http_code}' http://localhost:9000/); echo \"$$code\" | grep -qE '^(200|403)$$'"]

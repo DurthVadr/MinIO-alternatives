@@ -45,8 +45,23 @@ services:
       <<: *s3-healthcheck
       test: ["CMD-SHELL", "wget -qO- http://localhost:9000/minio/health/live >/dev/null 2>&1 || exit 1"]
 
-  # c2 (config-2, redundancy) is out of scope for this task; left here only
-  # as the 4-volume placeholder Task 3 will fill in with EC settings.
+  # c2 (config-2, redundancy): four drives, erasure coded, survives one drive
+  # loss.
+  #
+  # VERIFIED (Task 3 Step 3): EC:1 is accepted -- no "invalid storage class"
+  # anywhere in the logs, no fallback to EC:2 needed for either MinIO or Silo.
+  # /minio/admin/v3/info reports backendType "Erasure", totalSets [1],
+  # totalDrivesPerSet [4], standardSCParity 1, onlineDisks 4, and the startup
+  # log says "Formatting 1st pool, 1 set(s), 4 drives per set". Fault
+  # tolerance is then proven rather than inferred: tests/test_durability.py
+  # destroys /data3 and reads the object back byte-identical, and destroying a
+  # second drive (past what parity 1 covers) makes the same read fail, which
+  # is what shows the first result came from redundancy.
+  #
+  # MinIO warns "Host local has more than 1 drives of set. A host failure will
+  # result in data becoming unavailable." That is correct and applies to every
+  # c2 config in this study -- four drives on one host, one physical disk
+  # underneath. The claim under test is drive loss, not host loss.
   minio-c2:
     profiles: ["c2"]
     image: alpine/minio@sha256:3804726ba5769adfbe099766e70477003ae0bfd1e1a3ea12268ef830f3ffdf39

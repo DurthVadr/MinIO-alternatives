@@ -64,9 +64,26 @@ services:
       test: ["CMD-SHELL", "wget -S -O /dev/null http://127.0.0.1:9000 2>&1 | grep -qE 'HTTP/[0-9.]+ (200|403)'"]
 
   # ---- c2: master+filer+s3 plus four independent volume servers ----
-  # Out of scope for this task; left in place as the brief's placeholder for
-  # Task 3. Carries the same two corrections as c1 above (same image, same
-  # bugs) so Task 3 isn't rediscovering them; not otherwise verified here.
+  # Carries the same two corrections as c1 above (same image, same bugs).
+  #
+  # VERIFIED (Task 3): replication 001 is genuinely in effect -- the master's
+  # /dir/status reports layout "001", and every volume the probe object landed
+  # on exists on exactly two different volume servers (/dir/lookup). Stopping
+  # one of those servers leaves the object readable and byte-identical;
+  # stopping every server holding one of its volumes makes the read fail,
+  # which is what proves the first result came from the second copy.
+  #
+  # Note for anyone extending this: which volume server holds a given object
+  # is NOT predictable. An 8 MiB probe landed on a volume hosted by vol1+vol2
+  # in one run and vol1+vol3 in another, so "stop bench-swfs-vol3" is a fault
+  # only some of the time. tests/test_durability.py asks the filer for the
+  # object's volume ids and the master for their locations, then stops a
+  # server that actually holds a copy. A fixed victim would have produced a
+  # green result that meant nothing.
+  #
+  # 001 keeps two copies of every volume, so the measured storage cost is
+  # 0.50 usable against 0.75 for the erasure-coded systems at the same
+  # one-device fault tolerance. That contrast is the point of config 2.
   swfs-master:
     profiles: ["c2"]
     image: chrislusf/seaweedfs@sha256:52ec3c86db6e726a6cfa74031051ce3fab28fdef1dcebec0574ddeb14670b453

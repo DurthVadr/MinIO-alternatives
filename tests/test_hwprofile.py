@@ -13,11 +13,21 @@ RESULTS_ROOT = ROOT / "results"
 
 def _remove_results_subdir(name):
     """Remove results/<name> and, if that leaves results/ empty, remove it
-    too -- results/ is deliberately untracked (raw provenance with no
-    measurements yet is misleading in shared history), so tests must not
-    leave even an empty directory behind for git to notice later.
+    too -- a results directory holding nothing but a provenance stamp is
+    misleading in shared history, so tests must not leave even an empty
+    directory behind for git to notice later.
+
+    A directory that holds real measurements is left alone. Since Task 3,
+    results/<profile_id>/ can contain durability.json, which is committed;
+    rmtree-ing the whole directory here would delete a tracked measurement
+    file as a side effect of running an unrelated test. hwprofile.sh leaves
+    an existing, fingerprint-matching hardware-profile.json untouched, so
+    keeping that pair in place still leaves the working tree clean.
     """
-    shutil.rmtree(RESULTS_ROOT / name, ignore_errors=True)
+    subdir = RESULTS_ROOT / name
+    if subdir.is_dir() and any(p.name != "hardware-profile.json" for p in subdir.iterdir()):
+        return
+    shutil.rmtree(subdir, ignore_errors=True)
     try:
         RESULTS_ROOT.rmdir()
     except OSError:
