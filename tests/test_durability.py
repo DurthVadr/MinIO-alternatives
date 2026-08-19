@@ -283,8 +283,9 @@ def kill_one_device(system, replicas):
     if system in EC_SYSTEMS:
         # Confirm the drive really holds this object's data before destroying
         # it: otherwise "survived" could just mean nothing was lost.
-        before = path_bytes(container, f"{VICTIM_DRIVE}/{BUCKET}")
-        assert before > 0, (
+        object_before = path_bytes(container, f"{VICTIM_DRIVE}/{BUCKET}")
+        drive_before = path_bytes(container, VICTIM_DRIVE)
+        assert object_before > 0, (
             f"{system}: {VICTIM_DRIVE} holds no data for bucket {BUCKET}, so "
             f"destroying it would not be a fault at all"
         )
@@ -296,14 +297,21 @@ def kill_one_device(system, replicas):
             f"rm -rf {VICTIM_DRIVE}/..?* {VICTIM_DRIVE}/.[!.]* {VICTIM_DRIVE}/* 2>/dev/null; "
             f"exit 0",
         )
-        after = path_bytes(container, VICTIM_DRIVE)
-        assert after < before, (
-            f"{system}: {VICTIM_DRIVE} still holds {after} bytes after the wipe "
-            f"(was {before}); the device was not destroyed"
+        object_after = path_bytes(container, f"{VICTIM_DRIVE}/{BUCKET}")
+        drive_after = path_bytes(container, VICTIM_DRIVE)
+        assert object_after == 0 and drive_after < drive_before, (
+            f"{system}: {VICTIM_DRIVE} still holds {object_after} bytes of "
+            f"{BUCKET} and {drive_after} bytes overall (was {object_before} / "
+            f"{drive_before}); the device was not destroyed"
         )
         return (
             f"{VICTIM_DRIVE} wiped (1 of 4 drives)",
-            {"device_bytes_before_kill": before, "device_bytes_after_kill": after},
+            {
+                "object_bytes_on_device_before_kill": object_before,
+                "object_bytes_on_device_after_kill": object_after,
+                "device_bytes_before_kill": drive_before,
+                "device_bytes_after_kill": drive_after,
+            },
         )
 
     # SeaweedFS: stop a volume server that actually holds a copy, choosing the
@@ -368,8 +376,12 @@ def exceed_redundancy(system, replicas, evidence):
 # --------------------------------------------------------------------------
 @pytest.mark.parametrize("system", C2_SYSTEMS)
 def test_survives_single_device_loss(system, durability_results):
-    subprocess.run([STACK, "up", system, "c2"], check=True)
     try:
+        # Inside the try: a stack that fails halfway up still has containers
+        # and volumes to remove, and leaving them behind makes the NEXT
+        # system's `up` collide on the container name.
+        subprocess.run([STACK, "up", system, "c2"], check=True)
+
         s3 = s3_client()
         last_error = None
         for _ in range(30):
@@ -385,14 +397,14 @@ def test_survives_single_device_loss(system, durability_results):
         # Storage efficiency, measured on the pristine stack before anything is
         # broken. Same boot: bringing every system up a second time just to
         # weigh its volumes would double the slowest part of the run.
-        storage = json.loads(
-            subprocess.run(
-                [MEASURE, "--measure-only", system],
-                capture_output=True,
-                text=True,
-                check=True,
-            ).stdout
+        measured = subprocess.run(
+            [MEASURE, "--measure-only", system], capture_output=True, text=True
         )
+        assert measured.returncode == 0, (
+            f"{system}: measure-usable-ratio.sh failed "
+            f"(rc={measured.returncode}): {measured.stderr.strip()[-2000:]}"
+        )
+        storage = json.loads(measured.stdout)
         usable_ratio = storage["usable_ratio"]
         assert isinstance(usable_ratio, float) and usable_ratio > 0, (
             f"{system}: usable_ratio came out as {usable_ratio!r}"

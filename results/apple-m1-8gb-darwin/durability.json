@@ -3,7 +3,9 @@
     "device_killed": "/data3 wiped (1 of 4 drives)",
     "evidence": {
       "device_bytes_after_kill": 4096,
-      "device_bytes_before_kill": 2809139,
+      "device_bytes_before_kill": 92382301,
+      "object_bytes_on_device_after_kill": 0,
+      "object_bytes_on_device_before_kill": 2809139,
       "payload_bytes": 8388608,
       "read_after_fault_error": null,
       "read_after_fault_seconds": 0.06,
@@ -41,7 +43,9 @@
     "device_killed": "/data3 wiped (1 of 4 drives)",
     "evidence": {
       "device_bytes_after_kill": 0,
-      "device_bytes_before_kill": 2797007,
+      "device_bytes_before_kill": 92299610,
+      "object_bytes_on_device_after_kill": 0,
+      "object_bytes_on_device_before_kill": 2797007,
       "payload_bytes": 8388608,
       "read_after_fault_error": null,
       "read_after_fault_seconds": 0.06,
@@ -52,10 +56,10 @@
         "logical_bytes": 268435456,
         "method": "du -sb over every bench-<system>_* docker volume, before and after one incompressible object",
         "per_volume_after": {
-          "bench-rustfs_rustfs-d0": 89613101,
-          "bench-rustfs_rustfs-d1": 89613101,
-          "bench-rustfs_rustfs-d2": 89613101,
-          "bench-rustfs_rustfs-d3": 89613101
+          "bench-rustfs_rustfs-d0": 89613110,
+          "bench-rustfs_rustfs-d1": 89613110,
+          "bench-rustfs_rustfs-d2": 89613110,
+          "bench-rustfs_rustfs-d3": 89613110
         },
         "per_volume_baseline": {
           "bench-rustfs_rustfs-d0": 79037,
@@ -63,9 +67,9 @@
           "bench-rustfs_rustfs-d2": 79037,
           "bench-rustfs_rustfs-d3": 79037
         },
-        "physical_bytes_after": 358452404,
+        "physical_bytes_after": 358452440,
         "physical_bytes_baseline": 316148,
-        "physical_bytes_delta": 358136256,
+        "physical_bytes_delta": 358136292,
         "system": "rustfs",
         "usable_ratio": 0.7495,
         "usable_ratio_gross": 0.7489
@@ -76,52 +80,52 @@
     "usable_ratio": 0.7495
   },
   "seaweedfs": {
-    "device_killed": "bench-swfs-vol1 stopped (1 of 4 volume servers, holding 2 of the object's 2 volumes)",
+    "device_killed": "bench-swfs-vol3 stopped (1 of 4 volume servers, holding 2 of the object's 2 volumes)",
     "evidence": {
       "object_replicas": {
-        "12": [
-          "bench-swfs-vol0",
-          "bench-swfs-vol1"
+        "10": [
+          "bench-swfs-vol2",
+          "bench-swfs-vol3"
         ],
-        "9": [
-          "bench-swfs-vol1",
-          "bench-swfs-vol2"
+        "7": [
+          "bench-swfs-vol0",
+          "bench-swfs-vol3"
         ]
       },
       "payload_bytes": 8388608,
       "read_after_fault_error": null,
-      "read_after_fault_seconds": 0.08,
-      "redundancy_limit_action": "every server holding volume 9 stopped (bench-swfs-vol1, bench-swfs-vol2, including bench-swfs-vol1)",
+      "read_after_fault_seconds": 0.07,
+      "redundancy_limit_action": "every server holding volume 7 stopped (bench-swfs-vol0, bench-swfs-vol3, including bench-swfs-vol3)",
       "redundancy_limit_error": "ProtocolError: ('Connection broken: IncompleteRead(64 bytes read, 8388544 more expected)', IncompleteRead(64 bytes read, 8388544 more expected))",
       "redundancy_limit_read_failed": true,
-      "stopped_server": "bench-swfs-vol1",
+      "stopped_server": "bench-swfs-vol3",
       "storage": {
         "logical_bytes": 268435456,
         "method": "du -sb over every bench-<system>_* docker volume, before and after one incompressible object",
         "per_volume_after": {
-          "bench-seaweedfs_swfs-d0": 50340826,
-          "bench-seaweedfs_swfs-d1": 125839766,
-          "bench-seaweedfs_swfs-d2": 197144330,
-          "bench-seaweedfs_swfs-d3": 163589150,
-          "bench-seaweedfs_swfs-meta": 55753
+          "bench-seaweedfs_swfs-d0": 142617270,
+          "bench-seaweedfs_swfs-d1": 268448808,
+          "bench-seaweedfs_swfs-d2": 125839766,
+          "bench-seaweedfs_swfs-d3": 8228,
+          "bench-seaweedfs_swfs-meta": 55737
         },
         "per_volume_baseline": {
           "bench-seaweedfs_swfs-d0": 8228,
           "bench-seaweedfs_swfs-d1": 8228,
           "bench-seaweedfs_swfs-d2": 8228,
           "bench-seaweedfs_swfs-d3": 8228,
-          "bench-seaweedfs_swfs-meta": 52761
+          "bench-seaweedfs_swfs-meta": 52756
         },
-        "physical_bytes_after": 536969825,
-        "physical_bytes_baseline": 85673,
-        "physical_bytes_delta": 536884152,
+        "physical_bytes_after": 536969809,
+        "physical_bytes_baseline": 85668,
+        "physical_bytes_delta": 536884141,
         "system": "seaweedfs",
         "usable_ratio": 0.5,
         "usable_ratio_gross": 0.4999
       },
       "volumes_held_by_victim": [
-        9,
-        12
+        7,
+        10
       ]
     },
     "fault_tolerated": true,
@@ -132,7 +136,9 @@
     "device_killed": "/data3 wiped (1 of 4 drives)",
     "evidence": {
       "device_bytes_after_kill": 4096,
-      "device_bytes_before_kill": 2809143,
+      "device_bytes_before_kill": 92382423,
+      "object_bytes_on_device_after_kill": 0,
+      "object_bytes_on_device_before_kill": 2809143,
       "payload_bytes": 8388608,
       "read_after_fault_error": null,
       "read_after_fault_seconds": 0.05,
