@@ -3,8 +3,10 @@ import re
 from pathlib import Path
 
 LOCK = Path(__file__).resolve().parents[1] / "images.lock"
+COMPOSE_DIR = Path(__file__).resolve().parents[1] / "compose"
 EXPECTED_SYSTEMS = {"minio", "silo", "rustfs", "seaweedfs"}
 DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
+COMPOSE_DIGEST_RE = re.compile(r"@(sha256:[0-9a-f]{64})")
 
 
 def load():
@@ -45,3 +47,34 @@ def test_helper_curl_pinned_by_digest():
     # recording it, so it is locked the same way the four system images are.
     curl = load()["helpers"]["curl"]
     assert DIGEST_RE.match(curl["digest"]), f"curl digest malformed: {curl['digest']}"
+
+
+def test_compose_digests_match_lock():
+    # Ruling A: the digest lives in two places (images.lock and the compose
+    # files) and nothing else checks they agree. Drift in either direction --
+    # a compose file pinned to a digest images.lock does not know about, or a
+    # system image whose compose file has fallen behind a re-locked digest --
+    # must fail loudly instead of silently benchmarking the wrong build.
+    lock = load()
+    known_digests = {e["digest"] for e in lock["images"].values()}
+    known_digests |= {e["digest"] for e in lock.get("helpers", {}).values()}
+
+    compose_files = sorted(COMPOSE_DIR.glob("*.yaml"))
+    assert compose_files, f"no compose files found under {COMPOSE_DIR}"
+
+    for path in compose_files:
+        text = path.read_text()
+        for digest in COMPOSE_DIGEST_RE.findall(text):
+            assert digest in known_digests, (
+                f"{path.name} references {digest}, which is not in images.lock"
+            )
+
+    for name, entry in lock["images"].items():
+        compose_path = COMPOSE_DIR / f"{name}.yaml"
+        if not compose_path.is_file():
+            continue
+        text = compose_path.read_text()
+        assert f"@{entry['digest']}" in text, (
+            f"{compose_path.name} does not use the locked digest for {name} "
+            f"({entry['digest']})"
+        )

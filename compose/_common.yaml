@@ -1,0 +1,22 @@
+# Shared network declaration. Resource budget is PER SYSTEM, not per
+# container: every system's containers together get 6 CPUs and 2048m.
+#
+# CORRECTION (empirical, Step 1): the brief's original version of this file
+# also declared `x-net: &net` and `x-s3-healthcheck: &s3-healthcheck`
+# anchors here for every per-system compose file to reference via
+# `include: [_common.yaml]`. That does not work: `docker compose config`
+# fails with "yaml: unknown anchor 'net' referenced". Compose's `include:`
+# (and multi -f, which has the identical failure) merges each file's already
+# -parsed config tree, not raw YAML text -- YAML anchors are resolved during
+# each file's own parse, before any cross-file merge happens, so an anchor
+# defined in one file is never visible in another. Anchors only work within
+# a single file. Each per-system compose file therefore declares its own
+# (byte-identical) `x-net`/`x-s3-healthcheck` anchors, still useful there
+# since most of those files reuse them across two or more services (c1/c2,
+# or SeaweedFS's five c2 containers). This file keeps only the one piece
+# that genuinely is shared across files: the external network itself, which
+# `include:` merges as plain data with no anchor involved.
+networks:
+  s3bench:
+    external: true
+    name: s3bench

@@ -1,0 +1,86 @@
+include: [_common.yaml]
+
+# x-net/x-s3-healthcheck are declared locally, not in _common.yaml -- see
+# the CORRECTION comment in compose/_common.yaml for why cross-file YAML
+# anchors don't work with `include:`. Still worth it here: both c1 and c2
+# below reuse them.
+x-net: &net
+  networks: [s3bench]
+
+x-s3-healthcheck: &s3-healthcheck
+  interval: 2s
+  timeout: 3s
+  retries: 45
+  start_period: 3s
+
+services:
+  minio:
+    profiles: ["c1"]
+    image: alpine/minio@sha256:3804726ba5769adfbe099766e70477003ae0bfd1e1a3ea12268ef830f3ffdf39
+    container_name: bench-minio
+    <<: *net
+    # CORRECTION: the image runs as uid 100 (minio) by default, and its own
+    # /data directory (used to seed a fresh named volume) is owned by root
+    # inside the image -- so on a fresh volume the minio process cannot
+    # write to it ("file access denied, drive may be faulty" at startup).
+    # Verified by inspecting the image (`id`, `ls -la /data` as the default
+    # user) and reproducing with a throwaway named volume. Running as root
+    # is the simplest fix for a benchmark container where we don't need
+    # rootless isolation.
+    user: root
+    command: server /data --address :9000 --console-address :9001
+    environment:
+      MINIO_ROOT_USER: benchuser
+      MINIO_ROOT_PASSWORD: benchsecret0
+    ports: ["19000:9000"]
+    volumes: ["minio-d0:/data"]
+    cpus: 6.0
+    mem_limit: 2048m
+    # CORRECTION: `mc` is not in this image (`command -v mc` inside the
+    # container comes up empty; the only relevant binaries present are
+    # `wget` and `/usr/local/bin/minio` itself -- no `curl` either). Use
+    # MinIO's own liveness endpoint via wget instead, same as Silo's
+    # healthcheck (Silo has curl available; this image doesn't, hence wget).
+    healthcheck:
+      <<: *s3-healthcheck
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9000/minio/health/live >/dev/null 2>&1 || exit 1"]
+
+  # c2 (config-2, redundancy) is out of scope for this task; left here only
+  # as the 4-volume placeholder Task 3 will fill in with EC settings.
+  minio-c2:
+    profiles: ["c2"]
+    image: alpine/minio@sha256:3804726ba5769adfbe099766e70477003ae0bfd1e1a3ea12268ef830f3ffdf39
+    container_name: bench-minio
+    <<: *net
+    # Same root-owned-volume issue as the c1 service above (identical
+    # image); c2 is Task 3's scope to verify end-to-end, but there is no
+    # reason to leave a known landmine here.
+    user: root
+    command: server /data{0...3} --address :9000 --console-address :9001
+    environment:
+      MINIO_ROOT_USER: benchuser
+      MINIO_ROOT_PASSWORD: benchsecret0
+      # EC:1 over 4 drives = 3 data + 1 parity -> survives 1 drive loss, 75% usable.
+      MINIO_STORAGE_CLASS_STANDARD: "EC:1"
+    ports: ["19000:9000"]
+    volumes:
+      - "minio-d0:/data0"
+      - "minio-d1:/data1"
+      - "minio-d2:/data2"
+      - "minio-d3:/data3"
+    cpus: 6.0
+    mem_limit: 2048m
+    # CORRECTION: `mc` is not in this image (`command -v mc` inside the
+    # container comes up empty; the only relevant binaries present are
+    # `wget` and `/usr/local/bin/minio` itself -- no `curl` either). Use
+    # MinIO's own liveness endpoint via wget instead, same as Silo's
+    # healthcheck (Silo has curl available; this image doesn't, hence wget).
+    healthcheck:
+      <<: *s3-healthcheck
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9000/minio/health/live >/dev/null 2>&1 || exit 1"]
+
+volumes:
+  minio-d0: {}
+  minio-d1: {}
+  minio-d2: {}
+  minio-d3: {}

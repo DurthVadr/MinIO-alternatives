@@ -1,0 +1,72 @@
+# MinIO-identical structure; only the image and container name differ. Silo
+# is a drop-in fork so the command and env vars are byte-for-byte the same
+# as compose/minio.yaml -- that resemblance is itself a finding: Silo aims
+# to be a transparent MinIO replacement.
+include: [_common.yaml]
+
+# x-net/x-s3-healthcheck are declared locally, not in _common.yaml -- see
+# the CORRECTION comment in compose/_common.yaml for why cross-file YAML
+# anchors don't work with `include:`. Still worth it here: both c1 and c2
+# below reuse them.
+x-net: &net
+  networks: [s3bench]
+
+x-s3-healthcheck: &s3-healthcheck
+  interval: 2s
+  timeout: 3s
+  retries: 45
+  start_period: 3s
+
+services:
+  silo:
+    profiles: ["c1"]
+    image: pgsty/silo@sha256:2c00469c7b3b9537115727c059873869ec6d82b15fcabf8c75ff9961ae89161f
+    container_name: bench-silo
+    <<: *net
+    # VERIFIED (not distroless, contrary to the brief's guess): `docker run
+    # --rm --entrypoint sh <digest> -c 'command -v curl mc silo'` shows
+    # /usr/bin/curl and /usr/bin/mc both present, and the entrypoint script
+    # runs as root by default (no MINIO_USERNAME/UID set), so this needed no
+    # equivalent of MinIO's `user: root` workaround either. The brief's
+    # command/env/healthcheck guesses were all correct as written.
+    command: server /data --address :9000 --console-address :9001
+    environment:
+      MINIO_ROOT_USER: benchuser
+      MINIO_ROOT_PASSWORD: benchsecret0
+    ports: ["19000:9000"]
+    volumes: ["silo-d0:/data"]
+    cpus: 6.0
+    mem_limit: 2048m
+    healthcheck:
+      <<: *s3-healthcheck
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/minio/health/live || exit 1"]
+
+  # c2 (config-2, redundancy) is out of scope for this task; left here only
+  # as the 4-volume placeholder Task 3 will fill in with EC settings.
+  silo-c2:
+    profiles: ["c2"]
+    image: pgsty/silo@sha256:2c00469c7b3b9537115727c059873869ec6d82b15fcabf8c75ff9961ae89161f
+    container_name: bench-silo
+    <<: *net
+    command: server /data{0...3} --address :9000 --console-address :9001
+    environment:
+      MINIO_ROOT_USER: benchuser
+      MINIO_ROOT_PASSWORD: benchsecret0
+      MINIO_STORAGE_CLASS_STANDARD: "EC:1"
+    ports: ["19000:9000"]
+    volumes:
+      - "silo-d0:/data0"
+      - "silo-d1:/data1"
+      - "silo-d2:/data2"
+      - "silo-d3:/data3"
+    cpus: 6.0
+    mem_limit: 2048m
+    healthcheck:
+      <<: *s3-healthcheck
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/minio/health/live || exit 1"]
+
+volumes:
+  silo-d0: {}
+  silo-d1: {}
+  silo-d2: {}
+  silo-d3: {}

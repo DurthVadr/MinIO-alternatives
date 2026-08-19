@@ -1,0 +1,63 @@
+# c1 only. c2's EC flags are verified empirically in Task 3 Step 1 from the
+# CLI's --help output and added there; the four volumes below are declared
+# now only so Task 3 has somewhere to attach them without editing this
+# section.
+include: [_common.yaml]
+
+# x-net/x-s3-healthcheck are declared locally, not in _common.yaml -- see
+# the CORRECTION comment in compose/_common.yaml for why cross-file YAML
+# anchors don't work with `include:`.
+x-net: &net
+  networks: [s3bench]
+
+x-s3-healthcheck: &s3-healthcheck
+  interval: 2s
+  timeout: 3s
+  retries: 45
+  start_period: 3s
+
+services:
+  rustfs:
+    profiles: ["c1"]
+    image: rustfs/rustfs@sha256:821d0244341a9c679b36f87d7b863e8e77cab86f712c26c6ba9ad5669f222e72
+    container_name: bench-rustfs
+    <<: *net
+    # VERIFIED: the brief flagged these RUSTFS_* names as the least certain
+    # guess in the whole task (a MinIO-style convention, not confirmed
+    # fact). `docker run --rm <digest> server --help` lists each one
+    # verbatim (RUSTFS_ACCESS_KEY, RUSTFS_SECRET_KEY, RUSTFS_ADDRESS,
+    # RUSTFS_VOLUMES), and a real put/get roundtrip plus a wrong-credentials
+    # request (correctly rejected) confirms they are wired up as expected.
+    # No correction needed here.
+    environment:
+      RUSTFS_ACCESS_KEY: benchuser
+      RUSTFS_SECRET_KEY: benchsecret0
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_VOLUMES: "/data"
+    ports: ["19000:9000"]
+    volumes: ["rustfs-d0:/data"]
+    cpus: 6.0
+    mem_limit: 2048m
+    # CORRECTION 1: `curl -fsS` (fail on HTTP errors) against the bare root
+    # never succeeds -- root returns 403 for anonymous access here (same
+    # class of false-negative Ruling B fixed in bench/stack.sh's
+    # wait_ready), so the container was stuck reporting "starting"/
+    # "unhealthy" forever even while genuinely serving. Accept 200 or 403,
+    # same as wait_ready does.
+    #
+    # CORRECTION 2: every `$` below is doubled (`$$`). Compose performs its
+    # OWN `$VAR`/`$(...)` interpolation on healthcheck command strings at
+    # config-parse time, before the string ever reaches the container's
+    # shell -- verified with `docker compose ... config`, which showed
+    # `$code` silently resolved to empty (no such compose variable) and the
+    # command subshell mangled. `$$` is Compose's escape for a literal `$`,
+    # so the container's shell sees the intended `$(...)`/`$code`.
+    healthcheck:
+      <<: *s3-healthcheck
+      test: ["CMD-SHELL", "code=$$(curl -sS -o /dev/null -w '%{http_code}' http://localhost:9000/); echo \"$$code\" | grep -qE '^(200|403)$$'"]
+
+volumes:
+  rustfs-d0: {}
+  rustfs-d1: {}
+  rustfs-d2: {}
+  rustfs-d3: {}
