@@ -254,9 +254,30 @@ docker rm -f "$client_container" "${client_container}-analyze" >/dev/null 2>&1 |
 
 telemetry_pid=""
 watchdog_pid=""
+
+# Stop a `( sleep N; ... ) &` watchdog completely.
+#
+# `kill $!` reaches only the subshell, which is blocked in `wait`; the `sleep`
+# it forked is reparented to init and keeps every file descriptor it inherited
+# -- including this script's stdout -- open for the rest of the timeout. That
+# is invisible when stdout is a terminal and fatal when it is a pipe: the
+# orchestrator (bench/run.sh) reads this script's output, and its reader would
+# block for the full BENCH_RUN_TIMEOUT after every single measurement, turning
+# a 90-second run into a 15-minute one. Take the child down by pid, after the
+# subshell is dead so it cannot reach its `docker rm -f`.
+stop_watchdog() {
+  local child
+  [ -n "$watchdog_pid" ] || return 0
+  child="$(pgrep -P "$watchdog_pid" 2>/dev/null || true)"
+  kill "$watchdog_pid" 2>/dev/null || true
+  if [ -n "$child" ]; then kill $child 2>/dev/null || true; fi
+  wait "$watchdog_pid" 2>/dev/null || true
+  watchdog_pid=""
+}
+
 cleanup() {
   [ -n "$telemetry_pid" ] && kill "$telemetry_pid" 2>/dev/null || true
-  [ -n "$watchdog_pid" ] && kill "$watchdog_pid" 2>/dev/null || true
+  stop_watchdog
   docker rm -f "$client_container" "${client_container}-analyze" >/dev/null 2>&1 || true
   rm -f "$plan_file"
 }
@@ -318,9 +339,7 @@ warp_exit=$?
 set -e
 
 ended_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-kill "$watchdog_pid" 2>/dev/null || true
-wait "$watchdog_pid" 2>/dev/null || true
-watchdog_pid=""
+stop_watchdog
 kill "$telemetry_pid" 2>/dev/null || true
 wait "$telemetry_pid" 2>/dev/null || true
 telemetry_pid=""
@@ -369,9 +388,7 @@ if [ "$warp_exit" -eq 0 ]; then
     analyze --json "/results/$(basename "$benchdata")" >"$analysis_json" 2>>"$warp_log"
   analyze_exit=$?
   set -e
-  kill "$watchdog_pid" 2>/dev/null || true
-  wait "$watchdog_pid" 2>/dev/null || true
-  watchdog_pid=""
+  stop_watchdog
 fi
 
 # ---------------------------------------------------------------------------
