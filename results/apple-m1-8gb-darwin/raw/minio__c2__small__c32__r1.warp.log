@@ -1,0 +1,15 @@
+Mixed operations.
+Operation: DELETE, 10%, Concurrency: 32, Ran 59s.
+ * Throughput: 173.72 obj/s
+
+Operation: GET, 45%, Concurrency: 32, Ran 59s.
+ * Throughput: 3.05 MiB/s, 781.30 obj/s
+
+Operation: PUT, 15%, Concurrency: 32, Ran 59s.
+ * Throughput: 1.02 MiB/s, 260.27 obj/s
+
+Operation: STAT, 30%, Concurrency: 32, Ran 59s.
+ * Throughput: 520.83 obj/s
+
+Cluster Total: 4.07 MiB/s, 1735.94 obj/s over 59s.
+

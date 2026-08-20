@@ -1,0 +1,66 @@
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/W%29GDCdeo/7.b91m9TDHJVclwblP.rnd?partNumber=2&uploadId=81774427ad475bb8e779a1cedee468cfa3574469": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/XhjmnCoc/9.zVlgJbOoywcdEVVS.rnd?partNumber=1&uploadId=0926443a6ebb4409ff64487392c794ad402f9c5c": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/wbFZKclx/7.%28mNmxggS77Ft1co6.rnd?partNumber=1&uploadId=7216918c8c9d610d6aaf58f83b5b0641f752293d": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/POAZqY2u/9.K0Eqji3Y6uQ%28zftC.rnd?partNumber=1&uploadId=eb383316d9d7fbfc19c309f7dd49dc474eea9e89": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/E3ZvglMl/7.MUtW5YuvWIUsbQxY.rnd?partNumber=1&uploadId=13f2b0a78a5a26f0e3c47e54deba1b63ba3f56d4": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/WgCr43og/11.zDKIrvdkTmviNobw.rnd?partNumber=1&uploadId=e5d0f1564218e210720daf693ca4b69a223e71b6": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/ZsydTwFb/11.I2PFHDgR4yHcmisO.rnd?partNumber=2&uploadId=49c05d5b2693b3cadc64cace5e7d892c247e7c3e": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/YgMkWz5V/9.wif01o6WTwN6eO5w.rnd?partNumber=1&uploadId=a6ae6a8ab28679f1a0bc0dcf50b3cb98bb6dadd4": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/qqSBcf7b/9.GJ62NmXotFZ8qKb%28.rnd?partNumber=1&uploadId=092441eb61226a141dc03bc112080466c2198d82": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/d7oo2Omu/7.t5kc%28zhkTlxlA2ya.rnd?partNumber=1&uploadId=d3d2028517f5738109043a5b10d318676588d011": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/wl%29rUFSc/11.d3g2f9rKJ2DJLDEe.rnd?partNumber=2&uploadId=29d6a47b648499ad51f2fbb840161f35c1bb8f39": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/ian7hpV9/9.17K90IUubr2ENOaR.rnd?partNumber=2&uploadId=681b6dba6a925a3961a92c22a07e2cb81fa7779a": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/Oh0%29TuFj/9.pbnxNMAMxptwK0kt.rnd?partNumber=1&uploadId=34e14c5d756bb46e95a88383e4011a2804460022": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/fSk28NNm/11.66aO2xoUCA2X7dFF.rnd?partNumber=2&uploadId=4c3b84194645730ee74c616001c383732e13fcce": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/GHaEt9o4/9.dFI%28SkJsJWjSjTrm.rnd?partNumber=1&uploadId=f808f73e1037c7ef41e1ead7aaabe32f6b52f5b4": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/SSp9md9X/11.T7Oq21wIUhKcGgbE.rnd?partNumber=1&uploadId=c62148634f3ff22c67766d34ff6abb5011374b1d": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/odhSzof6/11.OginnB%29v2za4Tqkz.rnd?partNumber=1&uploadId=2cf472737565b9adc2519be78fa3dba9f4d38dc7": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/e4DYYZWY/11.WOkDA6%29x7dxifCby.rnd?partNumber=2&uploadId=95fdc4f3bea0a7a8193ac7533b0e18e4a461eb0f": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/MqQgKP%29z/9.DL6p8IXLlFe%29Fh25.rnd?partNumber=1&uploadId=d1793c65dbee0f50fc9bd2a8a5003818126f584a": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/XU7M4xAj/7.ixxgnOvM%29M%28yUEmf.rnd?partNumber=2&uploadId=ba024221504a12378f9432edce6cb035aeee1a53": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/UCU58os2/9.YGC4RjpQOnGgYmQ7.rnd?partNumber=2&uploadId=f3b6058125e700a336f47177ec71959f1992dbd3": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/VSrOaYHO/9.%28QqdAOJCZ%28rIx2j7.rnd?partNumber=1&uploadId=e3c3abd3f1ebbedb71852abe98496e62fce0c249": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/%297JXyKbL/9.Ol2kGCRYCW7GtKhm.rnd?partNumber=2&uploadId=de53327da5ec5d17ab3ddaeb9aeeec83489a96d0": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/L4QjYeqb/9.VY6SyXHwHqoD3XUC.rnd?partNumber=1&uploadId=0bf65b3ca57943b84c4638b4c65560b2e04a58f6": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/dJrtNIMy/9.aEl%29cJdtBbojnw2p.rnd?partNumber=1&uploadId=beb68e7c1d2af195e3c6bc05f49ead917158f5a6": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/e0PGlgRs/9.sV5gcMhNlq1wWRdC.rnd?partNumber=1&uploadId=429201fc2731f2ce279292295750e3080f4cb2cd": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/GxhgbQcG/7.Ph0ZZXyxh7HV1UrN.rnd?partNumber=2&uploadId=a7b013eb957366d7632af5016a6b5998ee13d0b3": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/xGtESCWX/11.xczUiJcCFqYo3yZt.rnd?partNumber=2&uploadId=ba1b6dd176b3dd369b96c1549413aec3c6602818": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/%28LhNkkZ8/9.HDole7SgPNjTYdL%28.rnd?partNumber=2&uploadId=6a373c93eeb4e7c6d09d1ed6db51b1a21c220d12": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/Bf9lqjK0/7.v2LtdeJ7ljm3hifw.rnd?partNumber=2&uploadId=e514a982a5eba020249ee02256cd9ed2f9d3e563": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/%28zLhGXKI/9.cso0xvLe2qmbAub7.rnd?partNumber=2&uploadId=0be2aec8f92d76ced2efad005c9c3a3a2552ca18": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+warp: <ERROR> upload error: Put "http://bench-seaweedfs:9000/warp-bench/smw%28SeXr/7.M%29gS7MUs%28q6HI5JP.rnd?partNumber=1&uploadId=d0ce9a9a875a9dbf9521cd895f484276942f2c81": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host 
+
+
+warp: <ERROR> Error preparing server: upload error: Put "http://bench-seaweedfs:9000/warp-bench/W%29GDCdeo/7.b91m9TDHJVclwblP.rnd?partNumber=2&uploadId=81774427ad475bb8e779a1cedee468cfa3574469": dial tcp: lookup bench-seaweedfs on 127.0.0.11:53: no such host.
