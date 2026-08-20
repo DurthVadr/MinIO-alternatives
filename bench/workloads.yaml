@@ -104,8 +104,10 @@ profiles:
     duration_seconds: 30
     args: ["--parts=16", "--part.size=8MiB", "--part.concurrent=1"]
 
-  # 20 objects per LIST page (warp's --max-keys default is 100), 20k keys ->
-  # pagination is genuinely exercised, 20x past the 1000-key page cap.
+  # 100 keys per LIST request (warp's --max-keys default), 20k keys in the
+  # bucket -> 200 pages per full listing, and 20x past the 1000-key page cap
+  # that SeaweedFS is the one system not to honour (Task 4 conformance
+  # matrix), so pagination is genuinely exercised.
   - id: list
     op: list
     args: ["--objects=20000", "--obj.size=1KiB"]
