@@ -1,0 +1,162 @@
+# c1: a single container (`weed server` runs master+volume+filer+s3 in one
+# process). c2 replication 001 needs independent volume servers so a copy
+# can survive a volume-server loss; the 6 CPU / 2048m budget splits across
+# five containers there.
+include: [_common.yaml]
+
+# x-net/x-s3-healthcheck are declared locally, not in _common.yaml -- see
+# the CORRECTION comment in compose/_common.yaml for why cross-file YAML
+# anchors don't work with `include:`. Especially worth it here: five
+# services in c2 alone reuse x-net.
+x-net: &net
+  networks: [s3bench]
+
+x-s3-healthcheck: &s3-healthcheck
+  interval: 2s
+  timeout: 3s
+  retries: 45
+  start_period: 3s
+
+services:
+  seaweedfs:
+    profiles: ["c1"]
+    image: chrislusf/seaweedfs@sha256:52ec3c86db6e726a6cfa74031051ce3fab28fdef1dcebec0574ddeb14670b453
+    container_name: bench-seaweedfs
+    <<: *net
+    # CORRECTION 1: `weed server` has no bare `-defaultReplication` flag --
+    # `weed server --help` only lists `-master.defaultReplication` (and
+    # `-filer.defaultReplicaPlacement`, unrelated here). The brief's
+    # original flag made the process exit 2 with a usage dump. 000 is also
+    # the implicit default, but it is passed explicitly for clarity.
+    #
+    # CORRECTION 2: AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY, which the brief
+    # set as plain environment variables, are silently ignored by the S3
+    # gateway -- verified by observing the log line "fail to load config:
+    # read S3 config: filer: no entry is found in filer store" and then
+    # confirming with a real request that WRONG credentials were accepted
+    # too (any signature passed). SeaweedFS's S3 gateway only enforces
+    # identities loaded from a `-s3.config` JSON file. The `configs:` block
+    # below supplies one so benchuser/benchsecret0 is actually required and
+    # wrong credentials are actually rejected (verified: InvalidAccessKeyId).
+    command: >
+      server -dir=/data -s3 -s3.port=9000 -s3.config=/etc/seaweedfs/s3config.json
+      -master.volumeSizeLimitMB=1024
+      -volume.max=0
+      -master.defaultReplication=000
+    configs:
+      - source: swfs_s3_identities
+        target: /etc/seaweedfs/s3config.json
+    ports: ["19000:9000"]
+    volumes: ["swfs-d0:/data"]
+    cpus: 6.0
+    mem_limit: 2048m
+    # CORRECTION 3: two stacked issues, both found via `docker exec ... sh`.
+    # (a) "localhost" resolves to ::1 first here (see /etc/hosts) and `weed`
+    # doesn't listen on the IPv6 loopback, so wget got "Connection refused"
+    # against a perfectly healthy server -- use 127.0.0.1 explicitly. (b)
+    # once the S3 gateway requires real auth (CORRECTION 2), the root path
+    # answers 403 for an anonymous GET, and plain `wget -qO-` treats any
+    # non-2xx as failure, same false-negative class as CORRECTION 1's curl
+    # -f. No curl in this image, so accept 200/403 by grepping wget -S's
+    # status line instead of curl's %{http_code}.
+    healthcheck:
+      <<: *s3-healthcheck
+      test: ["CMD-SHELL", "wget -S -O /dev/null http://127.0.0.1:9000 2>&1 | grep -qE 'HTTP/[0-9.]+ (200|403)'"]
+
+  # ---- c2: master+filer+s3 plus four independent volume servers ----
+  # Carries the same two corrections as c1 above (same image, same bugs).
+  #
+  # VERIFIED (Task 3): replication 001 is genuinely in effect -- the master's
+  # /dir/status reports layout "001", and every volume the probe object landed
+  # on exists on exactly two different volume servers (/dir/lookup). Stopping
+  # one of those servers leaves the object readable and byte-identical;
+  # stopping every server holding one of its volumes makes the read fail,
+  # which is what proves the first result came from the second copy.
+  #
+  # Note for anyone extending this: which volume server holds a given object
+  # is NOT predictable. An 8 MiB probe landed on a volume hosted by vol1+vol2
+  # in one run and vol1+vol3 in another, so "stop bench-swfs-vol3" is a fault
+  # only some of the time. tests/test_durability.py asks the filer for the
+  # object's volume ids and the master for their locations, then stops a
+  # server that actually holds a copy. A fixed victim would have produced a
+  # green result that meant nothing.
+  #
+  # 001 keeps two copies of every volume, so the measured storage cost is
+  # 0.50 usable against 0.75 for the erasure-coded systems at the same
+  # one-device fault tolerance. That contrast is the point of config 2.
+  swfs-master:
+    profiles: ["c2"]
+    image: chrislusf/seaweedfs@sha256:52ec3c86db6e726a6cfa74031051ce3fab28fdef1dcebec0574ddeb14670b453
+    container_name: bench-seaweedfs
+    <<: *net
+    command: >
+      server -dir=/data -s3 -s3.port=9000 -s3.config=/etc/seaweedfs/s3config.json
+      -master.volumeSizeLimitMB=1024
+      -volume=false
+      -master.defaultReplication=001
+    configs:
+      - source: swfs_s3_identities
+        target: /etc/seaweedfs/s3config.json
+    ports: ["19000:9000"]
+    volumes: ["swfs-meta:/data"]
+    cpus: 2.0
+    mem_limit: 768m
+    # Same fix as CORRECTION 3 on the c1 service above.
+    healthcheck:
+      <<: *s3-healthcheck
+      test: ["CMD-SHELL", "wget -S -O /dev/null http://127.0.0.1:9000 2>&1 | grep -qE 'HTTP/[0-9.]+ (200|403)'"]
+
+  swfs-vol0: &swfs-vol
+    profiles: ["c2"]
+    image: chrislusf/seaweedfs@sha256:52ec3c86db6e726a6cfa74031051ce3fab28fdef1dcebec0574ddeb14670b453
+    container_name: bench-swfs-vol0
+    <<: *net
+    command: volume -dir=/data -mserver=bench-seaweedfs:9333 -port=8080 -ip=bench-swfs-vol0 -max=0
+    volumes: ["swfs-d0:/data"]
+    cpus: 1.0
+    mem_limit: 320m
+    depends_on: [swfs-master]
+
+  swfs-vol1:
+    <<: *swfs-vol
+    container_name: bench-swfs-vol1
+    command: volume -dir=/data -mserver=bench-seaweedfs:9333 -port=8080 -ip=bench-swfs-vol1 -max=0
+    volumes: ["swfs-d1:/data"]
+
+  swfs-vol2:
+    <<: *swfs-vol
+    container_name: bench-swfs-vol2
+    command: volume -dir=/data -mserver=bench-seaweedfs:9333 -port=8080 -ip=bench-swfs-vol2 -max=0
+    volumes: ["swfs-d2:/data"]
+
+  swfs-vol3:
+    <<: *swfs-vol
+    container_name: bench-swfs-vol3
+    command: volume -dir=/data -mserver=bench-seaweedfs:9333 -port=8080 -ip=bench-swfs-vol3 -max=0
+    volumes: ["swfs-d3:/data"]
+
+# S3 gateway identity file (see CORRECTION 2 above). Compose (non-Swarm)
+# materializes `content:` as a real file and bind-mounts it read-only at
+# the service's `configs:` target -- no external file needed.
+configs:
+  swfs_s3_identities:
+    content: |
+      {
+        "identities": [
+          {
+            "name": "benchuser",
+            "credentials": [{"accessKey": "benchuser", "secretKey": "benchsecret0"}],
+            "actions": ["Admin", "Read", "Write"]
+          }
+        ]
+      }
+
+volumes:
+  swfs-meta: {}
+  swfs-d0: {}
+  swfs-d1: {}
+  swfs-d2: {}
+  swfs-d3: {}
+
+# Total c2 budget: 2.0 + 4x1.0 = 6.0 CPU, 768m + 4x320m = 2048m. Matches the
+# global per-system constraint.

@@ -1,0 +1,64 @@
+{
+  "artifacts": {
+    "telemetry_csv": "seaweedfs-memory-4096m.telemetry.csv",
+    "warp_log": "seaweedfs-memory-4096m.warp.log"
+  },
+  "concurrency": 32,
+  "config": "c1",
+  "ended_at": "2026-08-20T09:15:45Z",
+  "hardware_profile": {
+    "captured_at": "2026-08-20T09:11:42Z",
+    "container_runtime": {
+      "client_version": "29.1.2",
+      "kind": "docker",
+      "server_version": "29.1.3",
+      "storage_driver": "overlayfs",
+      "vm_arch": "aarch64",
+      "vm_cpus": 8,
+      "vm_ram_bytes": 4109217792
+    },
+    "disk": {
+      "host_free_bytes": 36619980800
+    },
+    "fingerprint": "140c82422064",
+    "host": {
+      "arch": "arm64",
+      "cpu_cores": 8,
+      "cpu_model": "Apple M1",
+      "os": "darwin",
+      "os_version": "25.4.0",
+      "ram_bytes": 8589934592
+    },
+    "images": {
+      "minio": "sha256:3804726ba5769adfbe099766e70477003ae0bfd1e1a3ea12268ef830f3ffdf39",
+      "rustfs": "sha256:821d0244341a9c679b36f87d7b863e8e77cab86f712c26c6ba9ad5669f222e72",
+      "seaweedfs": "sha256:52ec3c86db6e726a6cfa74031051ce3fab28fdef1dcebec0574ddeb14670b453",
+      "silo": "sha256:2c00469c7b3b9537115727c059873869ec6d82b15fcabf8c75ff9961ae89161f"
+    },
+    "profile_id": "apple-m1-8gb-darwin",
+    "schema": 1,
+    "warp": "v1.6.1"
+  },
+  "kind": "diagnostic",
+  "memory_budget": {
+    "diagnostic_applied_bytes": 4294967296,
+    "diagnostic_requested": "4096m",
+    "matrix_budget": "2048m"
+  },
+  "not_a_benchmark_result": true,
+  "outcome": {
+    "completed": true,
+    "container_exit_code": "0",
+    "container_oom_killed": false,
+    "container_status": "running",
+    "warp_exit": 0
+  },
+  "peak_memory_bytes": {
+    "bench-seaweedfs": 3590455296,
+    "bench-warp": 183189504
+  },
+  "profile": "bigdata-get",
+  "started_at": "2026-08-20T09:12:08Z",
+  "system": "seaweedfs",
+  "why": "SeaweedFS is OOM-killed during warp's prepare phase for the bigdata-get profile under the study's 2048m per-system budget, in both configurations, so that cell of the matrix has no number. This run repeats the same profile against the same pinned image with a DIFFERENT memory budget to establish what it needs. It ran under conditions no other system was given and must never be compared with, or aggregated into, results/<profile>/raw/."
+}

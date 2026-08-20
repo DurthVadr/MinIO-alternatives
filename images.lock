@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "resolved_at": "2026-08-19",
+  "platform": "linux/arm64",
+  "images": {
+    "minio": {
+      "ref": "alpine/minio:RELEASE.2025-10-15T17-29-55Z",
+      "digest": "sha256:3804726ba5769adfbe099766e70477003ae0bfd1e1a3ea12268ef830f3ffdf39",
+      "note": "Last MinIO community release. Third-party image; upstream stopped publishing on this release."
+    },
+    "silo": {
+      "ref": "pgsty/silo:latest",
+      "digest": "sha256:2c00469c7b3b9537115727c059873869ec6d82b15fcabf8c75ff9961ae89161f",
+      "note": "PGSTY fork of MinIO. Drop-in; full console restored."
+    },
+    "rustfs": {
+      "ref": "rustfs/rustfs:rc",
+      "digest": "sha256:821d0244341a9c679b36f87d7b863e8e77cab86f712c26c6ba9ad5669f222e72",
+      "note": "Release candidate. Distributed mode marked under testing upstream."
+    },
+    "seaweedfs": {
+      "ref": "chrislusf/seaweedfs:v3.33",
+      "digest": "sha256:52ec3c86db6e726a6cfa74031051ce3fab28fdef1dcebec0574ddeb14670b453",
+      "note": "Stable release line."
+    }
+  },
+  "helpers": {
+    "curl": {
+      "ref": "curlimages/curl:8.11.1",
+      "digest": "sha256:012fd1b212b09992bad38e2f911cac0bfbcadd0f8060fb4558fc2d74f8435a4a",
+      "note": "Used by bench/stack.sh to poll S3 endpoints for readiness. Pinned so a helper image change can never silently alter readiness detection mid-study."
+    },
+    "debian": {
+      "ref": "debian:trixie-slim",
+      "digest": "sha256:3a39a0592364683e6bab97937b72cad5a8fa6dcbbee90edb3bb48c7f8e94f258",
+      "note": "Base image for bench/warp/Dockerfile. The warp v1.6.1 linux/arm64 asset is a dynamically linked glibc binary needing glibc >= 2.38 and GLIBCXX_3.4.32, so it cannot run on alpine (musl) and will not run on bookworm-slim (glibc 2.36, verified). Pinned so the load generator's runtime can never change mid-study."
+    }
+  },
+  "warp": {
+    "version": "v1.6.1",
+    "asset": "warp-rdma_linux_arm64.tar.gz",
+    "url": "https://github.com/minio/warp/releases/download/v1.6.1/warp-rdma_linux_arm64.tar.gz",
+    "sha256": "7ce9f0061fe5d0d0ff809384234ddbab9f9b66a6b15e7fa0b3e0819f63ce0cfc",
+    "note": "No Docker image published for this version; built locally from the release asset."
+  }
+}

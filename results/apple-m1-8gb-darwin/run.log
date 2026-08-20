@@ -1,0 +1,1339 @@
+===========================================================================
+=== benchmark matrix: profile=apple-m1-8gb-darwin quick=1 started=2026-08-20T07:45:35Z
+===========================================================================
+repo         : /Users/mertcansaglam/MinIO alternatives
+git          : c14be72 (dirty)
+systems      : minio silo rustfs seaweedfs
+configs      : c1 c2
+profiles     : small medium bigdata-get
+rounds       : 1
+sweep        : none
+concurrency  : 32
+combinations : 24
+force        : 0
+disk floor   : 10 GiB (wait up to 600s), currently 31 GiB free
+sleep        : holding caffeinate -dimsu for the lifetime of this run
+python       : /Users/mertcansaglam/MinIO alternatives/.venv/bin/python
+
+-- tearing down any stack left over from an earlier session
+
+[1/24] minio c1 small c32 r1 -- already done (status=ok), skipping
+[2/24] minio c1 medium c32 r1 -- already done (status=ok), skipping
+[3/24] minio c1 bigdata-get c32 r1 -- 2026-08-20T07:45:36Z
+   disk: 31 GiB free (floor 10 GiB)
+ Volume bench-minio_minio-d0  Creating
+ Volume bench-minio_minio-d0  Created
+ Container bench-minio  Creating
+ Container bench-minio  Created
+ Container bench-minio  Starting
+ Container bench-minio  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/minio__c1__bigdata-get__c32__r1.json  status=ok
+ Container bench-minio  Stopping
+ Container bench-minio  Stopped
+ Container bench-minio  Removing
+ Container bench-minio  Removed
+ Volume bench-minio_minio-d0  Removing
+ Volume bench-minio_minio-d0  Removed
+   -> status=ok  exit=0  145s
+   disk after teardown: 24 GiB free
+[4/24] minio c2 small c32 r1 -- already done (status=ok_with_warnings), skipping
+[5/24] minio c2 medium c32 r1 -- 2026-08-20T07:48:01Z
+   disk: 24 GiB free (floor 10 GiB)
+ Volume bench-minio_minio-d0  Creating
+ Volume bench-minio_minio-d0  Created
+ Volume bench-minio_minio-d1  Creating
+ Volume bench-minio_minio-d1  Created
+ Volume bench-minio_minio-d2  Creating
+ Volume bench-minio_minio-d2  Created
+ Volume bench-minio_minio-d3  Creating
+ Volume bench-minio_minio-d3  Created
+ Container bench-minio  Creating
+ Container bench-minio  Created
+ Container bench-minio  Starting
+ Container bench-minio  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/minio__c2__medium__c32__r1.json  status=ok
+ Container bench-minio  Stopping
+ Container bench-minio  Stopped
+ Container bench-minio  Removing
+ Container bench-minio  Removed
+ Volume bench-minio_minio-d3  Removing
+ Volume bench-minio_minio-d0  Removing
+ Volume bench-minio_minio-d2  Removing
+ Volume bench-minio_minio-d1  Removing
+ Volume bench-minio_minio-d3  Removed
+ Volume bench-minio_minio-d0  Removed
+ Volume bench-minio_minio-d1  Removed
+ Volume bench-minio_minio-d2  Removed
+   -> status=ok  exit=0  135s
+   disk after teardown: 26 GiB free
+[6/24] minio c2 bigdata-get c32 r1 -- 2026-08-20T07:50:16Z
+   disk: 26 GiB free (floor 10 GiB)
+ Volume bench-minio_minio-d1  Creating
+ Volume bench-minio_minio-d1  Created
+ Volume bench-minio_minio-d2  Creating
+ Volume bench-minio_minio-d2  Created
+ Volume bench-minio_minio-d3  Creating
+ Volume bench-minio_minio-d3  Created
+ Volume bench-minio_minio-d0  Creating
+ Volume bench-minio_minio-d0  Created
+ Container bench-minio  Creating
+ Container bench-minio  Created
+ Container bench-minio  Starting
+ Container bench-minio  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/minio__c2__bigdata-get__c32__r1.json  status=ok
+ Container bench-minio  Stopping
+ Container bench-minio  Stopped
+ Container bench-minio  Removing
+ Container bench-minio  Removed
+ Volume bench-minio_minio-d0  Removing
+ Volume bench-minio_minio-d2  Removing
+ Volume bench-minio_minio-d1  Removing
+ Volume bench-minio_minio-d3  Removing
+ Volume bench-minio_minio-d2  Removed
+ Volume bench-minio_minio-d0  Removed
+ Volume bench-minio_minio-d1  Removed
+ Volume bench-minio_minio-d3  Removed
+   -> status=ok  exit=0  268s
+   disk after teardown: 24 GiB free
+[7/24] silo c1 small c32 r1 -- 2026-08-20T07:54:44Z
+   disk: 24 GiB free (floor 10 GiB)
+ Volume bench-silo_silo-d0  Creating
+ Volume bench-silo_silo-d0  Created
+ Container bench-silo  Creating
+ Container bench-silo  Created
+ Container bench-silo  Starting
+ Container bench-silo  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/silo__c1__small__c32__r1.json  status=ok
+ Container bench-silo  Stopping
+ Container bench-silo  Stopped
+ Container bench-silo  Removing
+ Container bench-silo  Removed
+ Volume bench-silo_silo-d0  Removing
+ Volume bench-silo_silo-d0  Removed
+   -> status=ok  exit=0  133s
+   disk after teardown: 29 GiB free
+[8/24] silo c1 medium c32 r1 -- 2026-08-20T07:56:57Z
+   disk: 29 GiB free (floor 10 GiB)
+ Volume bench-silo_silo-d0  Creating
+ Volume bench-silo_silo-d0  Created
+ Container bench-silo  Creating
+ Container bench-silo  Created
+ Container bench-silo  Starting
+ Container bench-silo  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/silo__c1__medium__c32__r1.json  status=ok
+ Container bench-silo  Stopping
+ Container bench-silo  Stopped
+ Container bench-silo  Removing
+ Container bench-silo  Removed
+ Volume bench-silo_silo-d0  Removing
+ Volume bench-silo_silo-d0  Removed
+   -> status=ok  exit=0  150s
+   disk after teardown: 27 GiB free
+[9/24] silo c1 bigdata-get c32 r1 -- 2026-08-20T07:59:27Z
+   disk: 27 GiB free (floor 10 GiB)
+ Volume bench-silo_silo-d0  Creating
+ Volume bench-silo_silo-d0  Created
+ Container bench-silo  Creating
+ Container bench-silo  Created
+ Container bench-silo  Starting
+ Container bench-silo  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/silo__c1__bigdata-get__c32__r1.json  status=ok
+ Container bench-silo  Stopping
+ Container bench-silo  Stopped
+ Container bench-silo  Removing
+ Container bench-silo  Removed
+ Volume bench-silo_silo-d0  Removing
+ Volume bench-silo_silo-d0  Removed
+   -> status=ok  exit=0  181s
+   disk after teardown: 24 GiB free
+[10/24] silo c2 small c32 r1 -- 2026-08-20T08:02:28Z
+   disk: 24 GiB free (floor 10 GiB)
+ Volume bench-silo_silo-d2  Creating
+ Volume bench-silo_silo-d2  Created
+ Volume bench-silo_silo-d3  Creating
+ Volume bench-silo_silo-d3  Created
+ Volume bench-silo_silo-d0  Creating
+ Volume bench-silo_silo-d0  Created
+ Volume bench-silo_silo-d1  Creating
+ Volume bench-silo_silo-d1  Created
+ Container bench-silo  Creating
+ Container bench-silo  Created
+ Container bench-silo  Starting
+ Container bench-silo  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/silo__c2__small__c32__r1.json  status=ok
+ Container bench-silo  Stopping
+ Container bench-silo  Stopped
+ Container bench-silo  Removing
+ Container bench-silo  Removed
+ Volume bench-silo_silo-d0  Removing
+ Volume bench-silo_silo-d2  Removing
+ Volume bench-silo_silo-d1  Removing
+ Volume bench-silo_silo-d3  Removing
+ Volume bench-silo_silo-d2  Removed
+ Volume bench-silo_silo-d0  Removed
+ Volume bench-silo_silo-d1  Removed
+ Volume bench-silo_silo-d3  Removed
+   -> status=ok  exit=0  177s
+   disk after teardown: 31 GiB free
+[11/24] silo c2 medium c32 r1 -- 2026-08-20T08:05:25Z
+   disk: 31 GiB free (floor 10 GiB)
+ Volume bench-silo_silo-d2  Creating
+ Volume bench-silo_silo-d2  Created
+ Volume bench-silo_silo-d3  Creating
+ Volume bench-silo_silo-d3  Created
+ Volume bench-silo_silo-d0  Creating
+ Volume bench-silo_silo-d0  Created
+ Volume bench-silo_silo-d1  Creating
+ Volume bench-silo_silo-d1  Created
+ Container bench-silo  Creating
+ Container bench-silo  Created
+ Container bench-silo  Starting
+ Container bench-silo  Started
+  WARN  no_analysis_artifact_errors: 1 of 18969 requests were discarded by warp's own record validation
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/silo__c2__medium__c32__r1.json  status=ok_with_warnings
+ Container bench-silo  Stopping
+ Container bench-silo  Stopped
+ Container bench-silo  Removing
+ Container bench-silo  Removed
+ Volume bench-silo_silo-d1  Removing
+ Volume bench-silo_silo-d3  Removing
+ Volume bench-silo_silo-d0  Removing
+ Volume bench-silo_silo-d2  Removing
+ Volume bench-silo_silo-d3  Removed
+ Volume bench-silo_silo-d1  Removed
+ Volume bench-silo_silo-d0  Removed
+ Volume bench-silo_silo-d2  Removed
+   -> status=ok_with_warnings  exit=0  94s  failed_checks: no_analysis_artifact_errors
+   disk after teardown: 25 GiB free
+[12/24] silo c2 bigdata-get c32 r1 -- 2026-08-20T08:06:59Z
+   disk: 25 GiB free (floor 10 GiB)
+ Volume bench-silo_silo-d1  Creating
+ Volume bench-silo_silo-d1  Created
+ Volume bench-silo_silo-d2  Creating
+ Volume bench-silo_silo-d2  Created
+ Volume bench-silo_silo-d3  Creating
+ Volume bench-silo_silo-d3  Created
+ Volume bench-silo_silo-d0  Creating
+ Volume bench-silo_silo-d0  Created
+ Container bench-silo  Creating
+ Container bench-silo  Created
+ Container bench-silo  Starting
+ Container bench-silo  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/silo__c2__bigdata-get__c32__r1.json  status=ok
+ Container bench-silo  Stopping
+ Container bench-silo  Stopped
+ Container bench-silo  Removing
+ Container bench-silo  Removed
+ Volume bench-silo_silo-d1  Removing
+ Volume bench-silo_silo-d0  Removing
+ Volume bench-silo_silo-d2  Removing
+ Volume bench-silo_silo-d3  Removing
+ Volume bench-silo_silo-d0  Removed
+ Volume bench-silo_silo-d2  Removed
+ Volume bench-silo_silo-d3  Removed
+ Volume bench-silo_silo-d1  Removed
+   -> status=ok  exit=0  102s
+   disk after teardown: 25 GiB free
+[13/24] rustfs c1 small c32 r1 -- 2026-08-20T08:08:41Z
+   disk: 25 GiB free (floor 10 GiB)
+ Volume bench-rustfs_rustfs-d0  Creating
+ Volume bench-rustfs_rustfs-d0  Created
+ Container bench-rustfs  Creating
+ Container bench-rustfs  Created
+ Container bench-rustfs  Starting
+ Container bench-rustfs  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/rustfs__c1__small__c32__r1.json  status=ok
+ Container bench-rustfs  Stopping
+ Container bench-rustfs  Stopped
+ Container bench-rustfs  Removing
+ Container bench-rustfs  Removed
+ Volume bench-rustfs_rustfs-d0  Removing
+ Volume bench-rustfs_rustfs-d0  Removed
+   -> status=ok  exit=0  152s
+   disk after teardown: 30 GiB free
+[14/24] rustfs c1 medium c32 r1 -- 2026-08-20T08:11:13Z
+   disk: 30 GiB free (floor 10 GiB)
+ Volume bench-rustfs_rustfs-d0  Creating
+ Volume bench-rustfs_rustfs-d0  Created
+ Container bench-rustfs  Creating
+ Container bench-rustfs  Created
+ Container bench-rustfs  Starting
+ Container bench-rustfs  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/rustfs__c1__medium__c32__r1.json  status=ok
+ Container bench-rustfs  Stopping
+ Container bench-rustfs  Stopped
+ Container bench-rustfs  Removing
+ Container bench-rustfs  Removed
+ Volume bench-rustfs_rustfs-d0  Removing
+ Volume bench-rustfs_rustfs-d0  Removed
+   -> status=ok  exit=0  88s
+   disk after teardown: 22 GiB free
+[15/24] rustfs c1 bigdata-get c32 r1 -- 2026-08-20T08:12:41Z
+   disk: 22 GiB free (floor 10 GiB)
+ Volume bench-rustfs_rustfs-d0  Creating
+ Volume bench-rustfs_rustfs-d0  Created
+ Container bench-rustfs  Creating
+ Container bench-rustfs  Created
+ Container bench-rustfs  Starting
+ Container bench-rustfs  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/rustfs__c1__bigdata-get__c32__r1.json  status=ok
+ Container bench-rustfs  Stopping
+ Container bench-rustfs  Stopped
+ Container bench-rustfs  Removing
+ Container bench-rustfs  Removed
+ Volume bench-rustfs_rustfs-d0  Removing
+ Volume bench-rustfs_rustfs-d0  Removed
+   -> status=ok  exit=0  92s
+   disk after teardown: 26 GiB free
+[16/24] rustfs c2 small c32 r1 -- 2026-08-20T08:14:13Z
+   disk: 26 GiB free (floor 10 GiB)
+ Volume bench-rustfs_rustfs-d2  Creating
+ Volume bench-rustfs_rustfs-d2  Created
+ Volume bench-rustfs_rustfs-d3  Creating
+ Volume bench-rustfs_rustfs-d3  Created
+ Volume bench-rustfs_rustfs-d0  Creating
+ Volume bench-rustfs_rustfs-d0  Created
+ Volume bench-rustfs_rustfs-d1  Creating
+ Volume bench-rustfs_rustfs-d1  Created
+ Container bench-rustfs  Creating
+ Container bench-rustfs  Created
+ Container bench-rustfs  Starting
+ Container bench-rustfs  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/rustfs__c2__small__c32__r1.json  status=ok
+ Container bench-rustfs  Stopping
+ Container bench-rustfs  Stopped
+ Container bench-rustfs  Removing
+ Container bench-rustfs  Removed
+ Volume bench-rustfs_rustfs-d3  Removing
+ Volume bench-rustfs_rustfs-d0  Removing
+ Volume bench-rustfs_rustfs-d1  Removing
+ Volume bench-rustfs_rustfs-d2  Removing
+ Volume bench-rustfs_rustfs-d3  Removed
+ Volume bench-rustfs_rustfs-d2  Removed
+ Volume bench-rustfs_rustfs-d0  Removed
+ Volume bench-rustfs_rustfs-d1  Removed
+   -> status=ok  exit=0  268s
+   disk after teardown: 31 GiB free
+[17/24] rustfs c2 medium c32 r1 -- 2026-08-20T08:18:41Z
+   disk: 31 GiB free (floor 10 GiB)
+ Volume bench-rustfs_rustfs-d2  Creating
+ Volume bench-rustfs_rustfs-d2  Created
+ Volume bench-rustfs_rustfs-d3  Creating
+ Volume bench-rustfs_rustfs-d3  Created
+ Volume bench-rustfs_rustfs-d0  Creating
+ Volume bench-rustfs_rustfs-d0  Created
+ Volume bench-rustfs_rustfs-d1  Creating
+ Volume bench-rustfs_rustfs-d1  Created
+ Container bench-rustfs  Creating
+ Container bench-rustfs  Created
+ Container bench-rustfs  Starting
+ Container bench-rustfs  Started
+  WARN  no_analysis_artifact_errors: 1 of 13090 requests were discarded by warp's own record validation
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/rustfs__c2__medium__c32__r1.json  status=ok_with_warnings
+ Container bench-rustfs  Stopping
+ Container bench-rustfs  Stopped
+ Container bench-rustfs  Removing
+ Container bench-rustfs  Removed
+ Volume bench-rustfs_rustfs-d3  Removing
+ Volume bench-rustfs_rustfs-d2  Removing
+ Volume bench-rustfs_rustfs-d1  Removing
+ Volume bench-rustfs_rustfs-d0  Removing
+ Volume bench-rustfs_rustfs-d1  Removed
+ Volume bench-rustfs_rustfs-d3  Removed
+ Volume bench-rustfs_rustfs-d0  Removed
+ Volume bench-rustfs_rustfs-d2  Removed
+   -> status=ok_with_warnings  exit=0  106s  failed_checks: no_analysis_artifact_errors
+   disk after teardown: 25 GiB free
+[18/24] rustfs c2 bigdata-get c32 r1 -- 2026-08-20T08:20:27Z
+   disk: 25 GiB free (floor 10 GiB)
+ Volume bench-rustfs_rustfs-d1  Creating
+ Volume bench-rustfs_rustfs-d1  Created
+ Volume bench-rustfs_rustfs-d2  Creating
+ Volume bench-rustfs_rustfs-d2  Created
+ Volume bench-rustfs_rustfs-d3  Creating
+ Volume bench-rustfs_rustfs-d3  Created
+ Volume bench-rustfs_rustfs-d0  Creating
+ Volume bench-rustfs_rustfs-d0  Created
+ Container bench-rustfs  Creating
+ Container bench-rustfs  Created
+ Container bench-rustfs  Starting
+ Container bench-rustfs  Started
+  WARN  telemetry_cpu_plausible: 34% of server CPU samples exceeded the 600.0% cgroup budget; worst was 1.04x of it
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/rustfs__c2__bigdata-get__c32__r1.json  status=ok_with_warnings
+ Container bench-rustfs  Stopping
+ Container bench-rustfs  Stopped
+ Container bench-rustfs  Removing
+ Container bench-rustfs  Removed
+ Volume bench-rustfs_rustfs-d3  Removing
+ Volume bench-rustfs_rustfs-d2  Removing
+ Volume bench-rustfs_rustfs-d0  Removing
+ Volume bench-rustfs_rustfs-d1  Removing
+ Volume bench-rustfs_rustfs-d3  Removed
+ Volume bench-rustfs_rustfs-d2  Removed
+ Volume bench-rustfs_rustfs-d1  Removed
+ Volume bench-rustfs_rustfs-d0  Removed
+   -> status=ok_with_warnings  exit=0  108s  failed_checks: telemetry_cpu_plausible
+   disk after teardown: 25 GiB free
+[19/24] seaweedfs c1 small c32 r1 -- 2026-08-20T08:22:15Z
+   disk: 25 GiB free (floor 10 GiB)
+ Volume bench-seaweedfs_swfs-d0  Creating
+ Volume bench-seaweedfs_swfs-d0  Created
+ Container bench-seaweedfs  Creating
+ Container bench-seaweedfs  Created
+ Container bench-seaweedfs  Starting
+ Container bench-seaweedfs  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/seaweedfs__c1__small__c32__r1.json  status=ok
+ Container bench-seaweedfs  Stopping
+ Container bench-seaweedfs  Stopped
+ Container bench-seaweedfs  Removing
+ Container bench-seaweedfs  Removed
+ Volume bench-seaweedfs_swfs-d0  Removing
+ Volume bench-seaweedfs_swfs-d0  Removed
+   -> status=ok  exit=0  130s
+   disk after teardown: 31 GiB free
+[20/24] seaweedfs c1 medium c32 r1 -- 2026-08-20T08:24:25Z
+   disk: 31 GiB free (floor 10 GiB)
+ Volume bench-seaweedfs_swfs-d0  Creating
+ Volume bench-seaweedfs_swfs-d0  Created
+ Container bench-seaweedfs  Creating
+ Container bench-seaweedfs  Created
+ Container bench-seaweedfs  Starting
+ Container bench-seaweedfs  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/seaweedfs__c1__medium__c32__r1.json  status=ok
+ Container bench-seaweedfs  Stopping
+ Container bench-seaweedfs  Stopped
+ Container bench-seaweedfs  Removing
+ Container bench-seaweedfs  Removed
+ Volume bench-seaweedfs_swfs-d0  Removing
+ Volume bench-seaweedfs_swfs-d0  Removed
+   -> status=ok  exit=0  108s
+   disk after teardown: 23 GiB free
+[21/24] seaweedfs c1 bigdata-get c32 r1 -- 2026-08-20T08:26:13Z
+   disk: 23 GiB free (floor 10 GiB)
+ Volume bench-seaweedfs_swfs-d0  Creating
+ Volume bench-seaweedfs_swfs-d0  Created
+ Container bench-seaweedfs  Creating
+ Container bench-seaweedfs  Created
+ Container bench-seaweedfs  Starting
+ Container bench-seaweedfs  Started
+  FATAL warp_exit_zero: warp exit code 1
+  FATAL analysis_parsed: no readable analysis (analyze exit 0)
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/seaweedfs__c1__bigdata-get__c32__r1.json  status=failed
+ Container bench-seaweedfs  Stopping
+ Container bench-seaweedfs  Stopped
+ Container bench-seaweedfs  Removing
+ Container bench-seaweedfs  Removed
+ Volume bench-seaweedfs_swfs-d0  Removing
+ Volume bench-seaweedfs_swfs-d0  Removed
+!! -> status=FAILED  exit=1  116s  no metrics were produced  (warp_exit_zero,analysis_parsed)
+   disk after teardown: 29 GiB free
+[22/24] seaweedfs c2 small c32 r1 -- 2026-08-20T08:28:09Z
+   disk: 29 GiB free (floor 10 GiB)
+ Volume bench-seaweedfs_swfs-meta  Creating
+ Volume bench-seaweedfs_swfs-meta  Created
+ Volume bench-seaweedfs_swfs-d0  Creating
+ Volume bench-seaweedfs_swfs-d0  Created
+ Volume bench-seaweedfs_swfs-d1  Creating
+ Volume bench-seaweedfs_swfs-d1  Created
+ Volume bench-seaweedfs_swfs-d2  Creating
+ Volume bench-seaweedfs_swfs-d2  Created
+ Volume bench-seaweedfs_swfs-d3  Creating
+ Volume bench-seaweedfs_swfs-d3  Created
+ Container bench-seaweedfs  Creating
+ Container bench-seaweedfs  Created
+ Container bench-swfs-vol0  Creating
+ Container bench-swfs-vol1  Creating
+ Container bench-swfs-vol3  Creating
+ Container bench-swfs-vol2  Creating
+ Container bench-swfs-vol2  Created
+ Container bench-swfs-vol1  Created
+ Container bench-swfs-vol3  Created
+ Container bench-swfs-vol0  Created
+ Container bench-seaweedfs  Starting
+ Container bench-seaweedfs  Started
+ Container bench-swfs-vol3  Starting
+ Container bench-swfs-vol0  Starting
+ Container bench-swfs-vol1  Starting
+ Container bench-swfs-vol2  Starting
+ Container bench-swfs-vol1  Started
+ Container bench-swfs-vol2  Started
+ Container bench-swfs-vol3  Started
+ Container bench-swfs-vol0  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/seaweedfs__c2__small__c32__r1.json  status=ok
+ Container bench-swfs-vol1  Stopping
+ Container bench-swfs-vol2  Stopping
+ Container bench-swfs-vol3  Stopping
+ Container bench-swfs-vol0  Stopping
+ Container bench-swfs-vol3  Stopped
+ Container bench-swfs-vol3  Removing
+ Container bench-swfs-vol2  Stopped
+ Container bench-swfs-vol2  Removing
+ Container bench-swfs-vol3  Removed
+ Container bench-swfs-vol0  Stopped
+ Container bench-swfs-vol0  Removing
+ Container bench-swfs-vol2  Removed
+ Container bench-swfs-vol1  Stopped
+ Container bench-swfs-vol1  Removing
+ Container bench-swfs-vol0  Removed
+ Container bench-swfs-vol1  Removed
+ Container bench-seaweedfs  Stopping
+ Container bench-seaweedfs  Stopped
+ Container bench-seaweedfs  Removing
+ Container bench-seaweedfs  Removed
+ Volume bench-seaweedfs_swfs-d3  Removing
+ Volume bench-seaweedfs_swfs-meta  Removing
+ Volume bench-seaweedfs_swfs-d0  Removing
+ Volume bench-seaweedfs_swfs-d2  Removing
+ Volume bench-seaweedfs_swfs-d1  Removing
+ Volume bench-seaweedfs_swfs-meta  Removed
+ Volume bench-seaweedfs_swfs-d3  Removed
+ Volume bench-seaweedfs_swfs-d0  Removed
+ Volume bench-seaweedfs_swfs-d1  Removed
+ Volume bench-seaweedfs_swfs-d2  Removed
+   -> status=ok  exit=0  119s
+   disk after teardown: 31 GiB free
+[23/24] seaweedfs c2 medium c32 r1 -- 2026-08-20T08:30:08Z
+   disk: 31 GiB free (floor 10 GiB)
+ Volume bench-seaweedfs_swfs-d0  Creating
+ Volume bench-seaweedfs_swfs-d0  Created
+ Volume bench-seaweedfs_swfs-d1  Creating
+ Volume bench-seaweedfs_swfs-d1  Created
+ Volume bench-seaweedfs_swfs-d2  Creating
+ Volume bench-seaweedfs_swfs-d2  Created
+ Volume bench-seaweedfs_swfs-d3  Creating
+ Volume bench-seaweedfs_swfs-d3  Created
+ Volume bench-seaweedfs_swfs-meta  Creating
+ Volume bench-seaweedfs_swfs-meta  Created
+ Container bench-seaweedfs  Creating
+ Container bench-seaweedfs  Created
+ Container bench-swfs-vol3  Creating
+ Container bench-swfs-vol1  Creating
+ Container bench-swfs-vol0  Creating
+ Container bench-swfs-vol2  Creating
+ Container bench-swfs-vol0  Created
+ Container bench-swfs-vol2  Created
+ Container bench-swfs-vol3  Created
+ Container bench-swfs-vol1  Created
+ Container bench-seaweedfs  Starting
+ Container bench-seaweedfs  Started
+ Container bench-swfs-vol3  Starting
+ Container bench-swfs-vol2  Starting
+ Container bench-swfs-vol0  Starting
+ Container bench-swfs-vol1  Starting
+ Container bench-swfs-vol3  Started
+ Container bench-swfs-vol0  Started
+ Container bench-swfs-vol2  Started
+ Container bench-swfs-vol1  Started
+  WARN  disk_headroom_after_run: 21.6 GiB free after the run against 24.0 GiB needed for another one; Docker Desktop reclaims freed volume space on its own schedule
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/seaweedfs__c2__medium__c32__r1.json  status=ok_with_warnings
+ Container bench-swfs-vol0  Stopping
+ Container bench-swfs-vol3  Stopping
+ Container bench-swfs-vol2  Stopping
+ Container bench-swfs-vol1  Stopping
+ Container bench-swfs-vol0  Stopped
+ Container bench-swfs-vol0  Removing
+ Container bench-swfs-vol3  Stopped
+ Container bench-swfs-vol3  Removing
+ Container bench-swfs-vol0  Removed
+ Container bench-swfs-vol2  Stopped
+ Container bench-swfs-vol2  Removing
+ Container bench-swfs-vol3  Removed
+ Container bench-swfs-vol1  Stopped
+ Container bench-swfs-vol1  Removing
+ Container bench-swfs-vol2  Removed
+ Container bench-swfs-vol1  Removed
+ Container bench-seaweedfs  Stopping
+ Container bench-seaweedfs  Stopped
+ Container bench-seaweedfs  Removing
+ Container bench-seaweedfs  Removed
+ Volume bench-seaweedfs_swfs-meta  Removing
+ Volume bench-seaweedfs_swfs-d2  Removing
+ Volume bench-seaweedfs_swfs-d3  Removing
+ Volume bench-seaweedfs_swfs-d0  Removing
+ Volume bench-seaweedfs_swfs-d1  Removing
+ Volume bench-seaweedfs_swfs-meta  Removed
+ Volume bench-seaweedfs_swfs-d2  Removed
+ Volume bench-seaweedfs_swfs-d1  Removed
+ Volume bench-seaweedfs_swfs-d0  Removed
+ Volume bench-seaweedfs_swfs-d3  Removed
+   -> status=ok_with_warnings  exit=0  117s  failed_checks: disk_headroom_after_run
+   disk after teardown: 21 GiB free
+[24/24] seaweedfs c2 bigdata-get c32 r1 -- 2026-08-20T08:32:05Z
+   disk: 21 GiB free (floor 10 GiB)
+ Volume bench-seaweedfs_swfs-d1  Creating
+ Volume bench-seaweedfs_swfs-d1  Created
+ Volume bench-seaweedfs_swfs-d2  Creating
+ Volume bench-seaweedfs_swfs-d2  Created
+ Volume bench-seaweedfs_swfs-d3  Creating
+ Volume bench-seaweedfs_swfs-d3  Created
+ Volume bench-seaweedfs_swfs-meta  Creating
+ Volume bench-seaweedfs_swfs-meta  Created
+ Volume bench-seaweedfs_swfs-d0  Creating
+ Volume bench-seaweedfs_swfs-d0  Created
+ Container bench-seaweedfs  Creating
+ Container bench-seaweedfs  Created
+ Container bench-swfs-vol0  Creating
+ Container bench-swfs-vol3  Creating
+ Container bench-swfs-vol2  Creating
+ Container bench-swfs-vol1  Creating
+ Container bench-swfs-vol1  Created
+ Container bench-swfs-vol0  Created
+ Container bench-swfs-vol3  Created
+ Container bench-swfs-vol2  Created
+ Container bench-seaweedfs  Starting
+ Container bench-seaweedfs  Started
+ Container bench-swfs-vol1  Starting
+ Container bench-swfs-vol3  Starting
+ Container bench-swfs-vol2  Starting
+ Container bench-swfs-vol0  Starting
+ Container bench-swfs-vol0  Started
+ Container bench-swfs-vol2  Started
+ Container bench-swfs-vol3  Started
+ Container bench-swfs-vol1  Started
+  FATAL warp_exit_zero: warp exit code 1
+  FATAL analysis_parsed: no readable analysis (analyze exit 0)
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/seaweedfs__c2__bigdata-get__c32__r1.json  status=failed
+ Container bench-swfs-vol0  Stopping
+ Container bench-swfs-vol2  Stopping
+ Container bench-swfs-vol3  Stopping
+ Container bench-swfs-vol1  Stopping
+ Container bench-swfs-vol1  Stopped
+ Container bench-swfs-vol1  Removing
+ Container bench-swfs-vol1  Removed
+ Container bench-swfs-vol3  Stopped
+ Container bench-swfs-vol3  Removing
+ Container bench-swfs-vol2  Stopped
+ Container bench-swfs-vol2  Removing
+ Container bench-swfs-vol3  Removed
+ Container bench-swfs-vol2  Removed
+ Container bench-swfs-vol0  Stopped
+ Container bench-swfs-vol0  Removing
+ Container bench-swfs-vol0  Removed
+ Container bench-seaweedfs  Stopping
+ Container bench-seaweedfs  Stopped
+ Container bench-seaweedfs  Removing
+ Container bench-seaweedfs  Removed
+ Volume bench-seaweedfs_swfs-d0  Removing
+ Volume bench-seaweedfs_swfs-d2  Removing
+ Volume bench-seaweedfs_swfs-d1  Removing
+ Volume bench-seaweedfs_swfs-meta  Removing
+ Volume bench-seaweedfs_swfs-d3  Removing
+ Volume bench-seaweedfs_swfs-d0  Removed
+ Volume bench-seaweedfs_swfs-d3  Removed
+ Volume bench-seaweedfs_swfs-d1  Removed
+ Volume bench-seaweedfs_swfs-meta  Removed
+ Volume bench-seaweedfs_swfs-d2  Removed
+!! -> status=FAILED  exit=1  112s  no metrics were produced  (warp_exit_zero,analysis_parsed)
+   disk after teardown: 28 GiB free
+
+=== all 24 combinations processed 2026-08-20T08:33:57Z ===
+
+===========================================================================
+=== summary: profile=apple-m1-8gb-darwin quick=1 finished=2026-08-20T08:33:57Z
+===========================================================================
+wall clock          : 00:48:22
+combinations planned: 24
+  measured this run : 21
+  already present   : 3 (skipped; --force re-runs them)
+mean seconds/run    : 138 (over 21 measured runs, stack up+down included)
+
+status counts across all planned combinations:
+  ok                 17
+  ok_with_warnings   5
+  suspect            0
+  failed             2
+  no_result          0
+  stack_failed       0
+
+not ok -- every combination below needs a human before anything is published:
+  ok_with_warnings  minio c2 small c32 r1              (existing)   no_analysis_artifact_errors
+  ok_with_warnings  silo c2 medium c32 r1              (measured)   no_analysis_artifact_errors
+  ok_with_warnings  rustfs c2 medium c32 r1            (measured)   no_analysis_artifact_errors
+  ok_with_warnings  rustfs c2 bigdata-get c32 r1       (measured)   telemetry_cpu_plausible
+  failed            seaweedfs c1 bigdata-get c32 r1    (measured)   warp_exit_zero,analysis_parsed
+  ok_with_warnings  seaweedfs c2 medium c32 r1         (measured)   disk_headroom_after_run
+  failed            seaweedfs c2 bigdata-get c32 r1    (measured)   warp_exit_zero,analysis_parsed
+
+raw results : /Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/
+run log     : /Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/run.log
+===========================================================================
+=== benchmark matrix: profile=apple-m1-8gb-darwin quick=1 started=2026-08-20T09:16:03Z
+===========================================================================
+repo         : /Users/mertcansaglam/MinIO alternatives
+git          : 5e19202 (dirty)
+systems      : minio
+configs      : c1 c2
+profiles     : bigdata-put multipart list
+rounds       : 1
+sweep        : none
+concurrency  : 32
+combinations : 6
+force        : 0
+disk         : each run waits for its own requirement (profile estimate + 10 GiB floor), up to 600s; currently 31 GiB free
+sleep        : holding caffeinate -dimsu for the lifetime of this run
+python       : /Users/mertcansaglam/MinIO alternatives/.venv/bin/python
+
+-- tearing down any stack left over from an earlier session
+
+[1/6] minio c1 bigdata-put c32 r1 -- 2026-08-20T09:16:04Z
+   disk: 31 GiB free, bigdata-put/c1 needs 18 GiB
+ Volume bench-minio_minio-d0  Creating
+ Volume bench-minio_minio-d0  Created
+ Container bench-minio  Creating
+ Container bench-minio  Created
+ Container bench-minio  Starting
+ Container bench-minio  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/minio__c1__bigdata-put__c32__r1.json  status=ok
+ Container bench-minio  Stopping
+ Container bench-minio  Stopped
+ Container bench-minio  Removing
+ Container bench-minio  Removed
+ Volume bench-minio_minio-d0  Removing
+ Volume bench-minio_minio-d0  Removed
+   -> status=ok  exit=0  42s
+   disk after teardown: 19 GiB free
+[2/6] minio c1 multipart c32 r1 -- 2026-08-20T09:16:46Z
+   disk: 19 GiB free, multipart/c1 needs 16 GiB
+ Volume bench-minio_minio-d0  Creating
+ Volume bench-minio_minio-d0  Created
+ Container bench-minio  Creating
+ Container bench-minio  Created
+ Container bench-minio  Starting
+ Container bench-minio  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/minio__c1__multipart__c32__r1.json  status=ok
+ Container bench-minio  Stopping
+ Container bench-minio  Stopped
+ Container bench-minio  Removing
+ Container bench-minio  Removed
+ Volume bench-minio_minio-d0  Removing
+ Volume bench-minio_minio-d0  Removed
+   -> status=ok  exit=0  41s
+   disk after teardown: 16 GiB free
+[3/6] minio c1 list c32 r1 -- 2026-08-20T09:17:27Z
+   disk: 16 GiB free, list/c1 needs 11 GiB
+ Volume bench-minio_minio-d0  Creating
+ Volume bench-minio_minio-d0  Created
+ Container bench-minio  Creating
+ Container bench-minio  Created
+ Container bench-minio  Starting
+ Container bench-minio  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/minio__c1__list__c32__r1.json  status=ok
+ Container bench-minio  Stopping
+ Container bench-minio  Stopped
+ Container bench-minio  Removing
+ Container bench-minio  Removed
+ Volume bench-minio_minio-d0  Removing
+ Volume bench-minio_minio-d0  Removed
+   -> status=ok  exit=0  80s
+   disk after teardown: 30 GiB free
+[4/6] minio c2 bigdata-put c32 r1 -- 2026-08-20T09:18:49Z
+   disk: 30 GiB free, bigdata-put/c2 needs 18 GiB
+ Volume bench-minio_minio-d0  Creating
+ Volume bench-minio_minio-d0  Created
+ Volume bench-minio_minio-d1  Creating
+ Volume bench-minio_minio-d1  Created
+ Volume bench-minio_minio-d2  Creating
+ Volume bench-minio_minio-d2  Created
+ Volume bench-minio_minio-d3  Creating
+ Volume bench-minio_minio-d3  Created
+ Container bench-minio  Creating
+ Container bench-minio  Created
+ Container bench-minio  Starting
+ Container bench-minio  Started
+  WARN  disk_headroom_after_run: 17.0 GiB free after the run against 18.0 GiB needed for another one; Docker Desktop reclaims freed volume space on its own schedule
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/minio__c2__bigdata-put__c32__r1.json  status=ok_with_warnings
+ Container bench-minio  Stopping
+ Container bench-minio  Stopped
+ Container bench-minio  Removing
+ Container bench-minio  Removed
+ Volume bench-minio_minio-d1  Removing
+ Volume bench-minio_minio-d3  Removing
+ Volume bench-minio_minio-d2  Removing
+ Volume bench-minio_minio-d0  Removing
+ Volume bench-minio_minio-d1  Removed
+ Volume bench-minio_minio-d3  Removed
+ Volume bench-minio_minio-d0  Removed
+ Volume bench-minio_minio-d2  Removed
+   -> status=ok_with_warnings  exit=0  42s  failed_checks: disk_headroom_after_run
+   disk after teardown: 16 GiB free
+[5/6] minio c2 multipart c32 r1 -- 2026-08-20T09:19:31Z
+   disk: 16 GiB free, multipart/c2 needs 16 GiB
+ Volume bench-minio_minio-d2  Creating
+ Volume bench-minio_minio-d2  Created
+ Volume bench-minio_minio-d3  Creating
+ Volume bench-minio_minio-d3  Created
+ Volume bench-minio_minio-d0  Creating
+ Volume bench-minio_minio-d0  Created
+ Volume bench-minio_minio-d1  Creating
+ Volume bench-minio_minio-d1  Created
+ Container bench-minio  Creating
+ Container bench-minio  Created
+ Container bench-minio  Starting
+ Container bench-minio  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/minio__c2__multipart__c32__r1.json  status=ok
+ Container bench-minio  Stopping
+ Container bench-minio  Stopped
+ Container bench-minio  Removing
+ Container bench-minio  Removed
+ Volume bench-minio_minio-d1  Removing
+ Volume bench-minio_minio-d3  Removing
+ Volume bench-minio_minio-d0  Removing
+ Volume bench-minio_minio-d2  Removing
+ Volume bench-minio_minio-d1  Removed
+ Volume bench-minio_minio-d0  Removed
+ Volume bench-minio_minio-d3  Removed
+ Volume bench-minio_minio-d2  Removed
+   -> status=ok  exit=0  41s
+   disk after teardown: 18 GiB free
+[6/6] minio c2 list c32 r1 -- 2026-08-20T09:20:12Z
+   disk: 18 GiB free, list/c2 needs 11 GiB
+ Volume bench-minio_minio-d3  Creating
+ Volume bench-minio_minio-d3  Created
+ Volume bench-minio_minio-d0  Creating
+ Volume bench-minio_minio-d0  Created
+ Volume bench-minio_minio-d1  Creating
+ Volume bench-minio_minio-d1  Created
+ Volume bench-minio_minio-d2  Creating
+ Volume bench-minio_minio-d2  Created
+ Container bench-minio  Creating
+ Container bench-minio  Created
+ Container bench-minio  Starting
+ Container bench-minio  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/minio__c2__list__c32__r1.json  status=ok
+ Container bench-minio  Stopping
+ Container bench-minio  Stopped
+ Container bench-minio  Removing
+ Container bench-minio  Removed
+ Volume bench-minio_minio-d2  Removing
+ Volume bench-minio_minio-d3  Removing
+ Volume bench-minio_minio-d0  Removing
+ Volume bench-minio_minio-d1  Removing
+ Volume bench-minio_minio-d1  Removed
+ Volume bench-minio_minio-d3  Removed
+ Volume bench-minio_minio-d0  Removed
+ Volume bench-minio_minio-d2  Removed
+   -> status=ok  exit=0  104s
+   disk after teardown: 31 GiB free
+
+=== all 6 combinations processed 2026-08-20T09:21:56Z ===
+
+===========================================================================
+=== summary: profile=apple-m1-8gb-darwin quick=1 finished=2026-08-20T09:21:56Z
+===========================================================================
+wall clock          : 00:05:53
+combinations planned: 6
+  measured this run : 6
+  already present   : 0 (skipped; --force re-runs them)
+mean seconds/run    : 58 (over 6 measured runs, stack up+down included)
+
+status counts across all planned combinations:
+  ok                 5
+  ok_with_warnings   1
+  suspect            0
+  failed             0
+  no_result          0
+  stack_failed       0
+
+not ok -- every combination below needs a human before anything is published:
+  ok_with_warnings  minio c2 bigdata-put c32 r1        (measured)   disk_headroom_after_run
+
+raw results : /Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/
+run log     : /Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/run.log
+===========================================================================
+=== benchmark matrix: profile=apple-m1-8gb-darwin quick=1 started=2026-08-20T09:28:22Z
+===========================================================================
+repo         : /Users/mertcansaglam/MinIO alternatives
+git          : 5e19202 (dirty)
+systems      : minio silo rustfs seaweedfs
+configs      : c1 c2
+profiles     : small medium bigdata-get
+rounds       : 1
+sweep        : none
+concurrency  : 32
+combinations : 24
+force        : 1
+disk         : each run waits for its own requirement (profile estimate + 10 GiB floor), up to 600s; currently 32 GiB free
+sleep        : holding caffeinate -dimsu for the lifetime of this run
+python       : /Users/mertcansaglam/MinIO alternatives/.venv/bin/python
+
+-- tearing down any stack left over from an earlier session
+
+[1/24] minio c1 small c32 r1 -- --force: discarding the existing result and re-running
+[1/24] minio c1 small c32 r1 -- 2026-08-20T09:28:23Z
+   disk: 32 GiB free, small/c1 needs 11 GiB
+ Volume bench-minio_minio-d0  Creating
+ Volume bench-minio_minio-d0  Created
+ Container bench-minio  Creating
+ Container bench-minio  Created
+ Container bench-minio  Starting
+ Container bench-minio  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/minio__c1__small__c32__r1.json  status=ok
+ Container bench-minio  Stopping
+ Container bench-minio  Stopped
+ Container bench-minio  Removing
+ Container bench-minio  Removed
+ Volume bench-minio_minio-d0  Removing
+ Volume bench-minio_minio-d0  Removed
+   -> status=ok  exit=0  97s
+   disk after teardown: 31 GiB free
+[2/24] minio c1 medium c32 r1 -- --force: discarding the existing result and re-running
+[2/24] minio c1 medium c32 r1 -- 2026-08-20T09:30:00Z
+   disk: 31 GiB free, medium/c1 needs 21 GiB
+ Volume bench-minio_minio-d0  Creating
+ Volume bench-minio_minio-d0  Created
+ Container bench-minio  Creating
+ Container bench-minio  Created
+ Container bench-minio  Starting
+ Container bench-minio  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/minio__c1__medium__c32__r1.json  status=ok
+ Container bench-minio  Stopping
+ Container bench-minio  Stopped
+ Container bench-minio  Removing
+ Container bench-minio  Removed
+ Volume bench-minio_minio-d0  Removing
+ Volume bench-minio_minio-d0  Removed
+   -> status=ok  exit=0  80s
+   disk after teardown: 21 GiB free
+[3/24] minio c1 bigdata-get c32 r1 -- --force: discarding the existing result and re-running
+[3/24] minio c1 bigdata-get c32 r1 -- 2026-08-20T09:31:20Z
+   disk: 21 GiB free, bigdata-get/c1 needs 17 GiB
+ Volume bench-minio_minio-d0  Creating
+ Volume bench-minio_minio-d0  Created
+ Container bench-minio  Creating
+ Container bench-minio  Created
+ Container bench-minio  Starting
+ Container bench-minio  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/minio__c1__bigdata-get__c32__r1.json  status=ok
+ Container bench-minio  Stopping
+ Container bench-minio  Stopped
+ Container bench-minio  Removing
+ Container bench-minio  Removed
+ Volume bench-minio_minio-d0  Removing
+ Volume bench-minio_minio-d0  Removed
+   -> status=ok  exit=0  86s
+   disk after teardown: 27 GiB free
+[4/24] minio c2 small c32 r1 -- --force: discarding the existing result and re-running
+[4/24] minio c2 small c32 r1 -- 2026-08-20T09:32:46Z
+   disk: 27 GiB free, small/c2 needs 11 GiB
+ Volume bench-minio_minio-d0  Creating
+ Volume bench-minio_minio-d0  Created
+ Volume bench-minio_minio-d1  Creating
+ Volume bench-minio_minio-d1  Created
+ Volume bench-minio_minio-d2  Creating
+ Volume bench-minio_minio-d2  Created
+ Volume bench-minio_minio-d3  Creating
+ Volume bench-minio_minio-d3  Created
+ Container bench-minio  Creating
+ Container bench-minio  Created
+ Container bench-minio  Starting
+ Container bench-minio  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/minio__c2__small__c32__r1.json  status=ok
+ Container bench-minio  Stopping
+ Container bench-minio  Stopped
+ Container bench-minio  Removing
+ Container bench-minio  Removed
+ Volume bench-minio_minio-d1  Removing
+ Volume bench-minio_minio-d2  Removing
+ Volume bench-minio_minio-d3  Removing
+ Volume bench-minio_minio-d0  Removing
+ Volume bench-minio_minio-d1  Removed
+ Volume bench-minio_minio-d3  Removed
+ Volume bench-minio_minio-d0  Removed
+ Volume bench-minio_minio-d2  Removed
+   -> status=ok  exit=0  135s
+   disk after teardown: 31 GiB free
+[5/24] minio c2 medium c32 r1 -- --force: discarding the existing result and re-running
+[5/24] minio c2 medium c32 r1 -- 2026-08-20T09:35:01Z
+   disk: 31 GiB free, medium/c2 needs 21 GiB
+ Volume bench-minio_minio-d1  Creating
+ Volume bench-minio_minio-d1  Created
+ Volume bench-minio_minio-d2  Creating
+ Volume bench-minio_minio-d2  Created
+ Volume bench-minio_minio-d3  Creating
+ Volume bench-minio_minio-d3  Created
+ Volume bench-minio_minio-d0  Creating
+ Volume bench-minio_minio-d0  Created
+ Container bench-minio  Creating
+ Container bench-minio  Created
+ Container bench-minio  Starting
+ Container bench-minio  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/minio__c2__medium__c32__r1.json  status=ok
+ Container bench-minio  Stopping
+ Container bench-minio  Stopped
+ Container bench-minio  Removing
+ Container bench-minio  Removed
+ Volume bench-minio_minio-d1  Removing
+ Volume bench-minio_minio-d0  Removing
+ Volume bench-minio_minio-d3  Removing
+ Volume bench-minio_minio-d2  Removing
+ Volume bench-minio_minio-d0  Removed
+ Volume bench-minio_minio-d1  Removed
+ Volume bench-minio_minio-d3  Removed
+ Volume bench-minio_minio-d2  Removed
+   -> status=ok  exit=0  86s
+   disk after teardown: 24 GiB free
+[6/24] minio c2 bigdata-get c32 r1 -- --force: discarding the existing result and re-running
+[6/24] minio c2 bigdata-get c32 r1 -- 2026-08-20T09:36:27Z
+   disk: 24 GiB free, bigdata-get/c2 needs 17 GiB
+ Volume bench-minio_minio-d3  Creating
+ Volume bench-minio_minio-d3  Created
+ Volume bench-minio_minio-d0  Creating
+ Volume bench-minio_minio-d0  Created
+ Volume bench-minio_minio-d1  Creating
+ Volume bench-minio_minio-d1  Created
+ Volume bench-minio_minio-d2  Creating
+ Volume bench-minio_minio-d2  Created
+ Container bench-minio  Creating
+ Container bench-minio  Created
+ Container bench-minio  Starting
+ Container bench-minio  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/minio__c2__bigdata-get__c32__r1.json  status=ok
+ Container bench-minio  Stopping
+ Container bench-minio  Stopped
+ Container bench-minio  Removing
+ Container bench-minio  Removed
+ Volume bench-minio_minio-d3  Removing
+ Volume bench-minio_minio-d0  Removing
+ Volume bench-minio_minio-d2  Removing
+ Volume bench-minio_minio-d1  Removing
+ Volume bench-minio_minio-d3  Removed
+ Volume bench-minio_minio-d2  Removed
+ Volume bench-minio_minio-d1  Removed
+ Volume bench-minio_minio-d0  Removed
+   -> status=ok  exit=0  106s
+   disk after teardown: 26 GiB free
+[7/24] silo c1 small c32 r1 -- --force: discarding the existing result and re-running
+[7/24] silo c1 small c32 r1 -- 2026-08-20T09:38:14Z
+   disk: 26 GiB free, small/c1 needs 11 GiB
+ Volume bench-silo_silo-d0  Creating
+ Volume bench-silo_silo-d0  Created
+ Container bench-silo  Creating
+ Container bench-silo  Created
+ Container bench-silo  Starting
+ Container bench-silo  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/silo__c1__small__c32__r1.json  status=ok
+ Container bench-silo  Stopping
+ Container bench-silo  Stopped
+ Container bench-silo  Removing
+ Container bench-silo  Removed
+ Volume bench-silo_silo-d0  Removing
+ Volume bench-silo_silo-d0  Removed
+   -> status=ok  exit=0  105s
+   disk after teardown: 31 GiB free
+[8/24] silo c1 medium c32 r1 -- --force: discarding the existing result and re-running
+[8/24] silo c1 medium c32 r1 -- 2026-08-20T09:40:00Z
+   disk: 31 GiB free, medium/c1 needs 21 GiB
+ Volume bench-silo_silo-d0  Creating
+ Volume bench-silo_silo-d0  Created
+ Container bench-silo  Creating
+ Container bench-silo  Created
+ Container bench-silo  Starting
+ Container bench-silo  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/silo__c1__medium__c32__r1.json  status=ok
+ Container bench-silo  Stopping
+ Container bench-silo  Stopped
+ Container bench-silo  Removing
+ Container bench-silo  Removed
+ Volume bench-silo_silo-d0  Removing
+ Volume bench-silo_silo-d0  Removed
+   -> status=ok  exit=0  84s
+   disk after teardown: 26 GiB free
+[9/24] silo c1 bigdata-get c32 r1 -- --force: discarding the existing result and re-running
+[9/24] silo c1 bigdata-get c32 r1 -- 2026-08-20T09:41:24Z
+   disk: 26 GiB free, bigdata-get/c1 needs 17 GiB
+ Volume bench-silo_silo-d0  Creating
+ Volume bench-silo_silo-d0  Created
+ Container bench-silo  Creating
+ Container bench-silo  Created
+ Container bench-silo  Starting
+ Container bench-silo  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/silo__c1__bigdata-get__c32__r1.json  status=ok
+ Container bench-silo  Stopping
+ Container bench-silo  Stopped
+ Container bench-silo  Removing
+ Container bench-silo  Removed
+ Volume bench-silo_silo-d0  Removing
+ Volume bench-silo_silo-d0  Removed
+   -> status=ok  exit=0  127s
+   disk after teardown: 27 GiB free
+[10/24] silo c2 small c32 r1 -- --force: discarding the existing result and re-running
+[10/24] silo c2 small c32 r1 -- 2026-08-20T09:43:31Z
+   disk: 27 GiB free, small/c2 needs 11 GiB
+ Volume bench-silo_silo-d3  Creating
+ Volume bench-silo_silo-d3  Created
+ Volume bench-silo_silo-d0  Creating
+ Volume bench-silo_silo-d0  Created
+ Volume bench-silo_silo-d1  Creating
+ Volume bench-silo_silo-d1  Created
+ Volume bench-silo_silo-d2  Creating
+ Volume bench-silo_silo-d2  Created
+ Container bench-silo  Creating
+ Container bench-silo  Created
+ Container bench-silo  Starting
+ Container bench-silo  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/silo__c2__small__c32__r1.json  status=ok
+ Container bench-silo  Stopping
+ Container bench-silo  Stopped
+ Container bench-silo  Removing
+ Container bench-silo  Removed
+ Volume bench-silo_silo-d3  Removing
+ Volume bench-silo_silo-d0  Removing
+ Volume bench-silo_silo-d1  Removing
+ Volume bench-silo_silo-d2  Removing
+ Volume bench-silo_silo-d0  Removed
+ Volume bench-silo_silo-d3  Removed
+ Volume bench-silo_silo-d1  Removed
+ Volume bench-silo_silo-d2  Removed
+   -> status=ok  exit=0  153s
+   disk after teardown: 32 GiB free
+[11/24] silo c2 medium c32 r1 -- --force: discarding the existing result and re-running
+[11/24] silo c2 medium c32 r1 -- 2026-08-20T09:46:04Z
+   disk: 32 GiB free, medium/c2 needs 21 GiB
+ Volume bench-silo_silo-d2  Creating
+ Volume bench-silo_silo-d2  Created
+ Volume bench-silo_silo-d3  Creating
+ Volume bench-silo_silo-d3  Created
+ Volume bench-silo_silo-d0  Creating
+ Volume bench-silo_silo-d0  Created
+ Volume bench-silo_silo-d1  Creating
+ Volume bench-silo_silo-d1  Created
+ Container bench-silo  Creating
+ Container bench-silo  Created
+ Container bench-silo  Starting
+ Container bench-silo  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/silo__c2__medium__c32__r1.json  status=ok
+ Container bench-silo  Stopping
+ Container bench-silo  Stopped
+ Container bench-silo  Removing
+ Container bench-silo  Removed
+ Volume bench-silo_silo-d3  Removing
+ Volume bench-silo_silo-d1  Removing
+ Volume bench-silo_silo-d0  Removing
+ Volume bench-silo_silo-d2  Removing
+ Volume bench-silo_silo-d3  Removed
+ Volume bench-silo_silo-d2  Removed
+ Volume bench-silo_silo-d1  Removed
+ Volume bench-silo_silo-d0  Removed
+   -> status=ok  exit=0  97s
+   disk after teardown: 26 GiB free
+[12/24] silo c2 bigdata-get c32 r1 -- --force: discarding the existing result and re-running
+[12/24] silo c2 bigdata-get c32 r1 -- 2026-08-20T09:47:41Z
+   disk: 26 GiB free, bigdata-get/c2 needs 17 GiB
+ Volume bench-silo_silo-d0  Creating
+ Volume bench-silo_silo-d0  Created
+ Volume bench-silo_silo-d1  Creating
+ Volume bench-silo_silo-d1  Created
+ Volume bench-silo_silo-d2  Creating
+ Volume bench-silo_silo-d2  Created
+ Volume bench-silo_silo-d3  Creating
+ Volume bench-silo_silo-d3  Created
+ Container bench-silo  Creating
+ Container bench-silo  Created
+ Container bench-silo  Starting
+ Container bench-silo  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/silo__c2__bigdata-get__c32__r1.json  status=ok
+ Container bench-silo  Stopping
+ Container bench-silo  Stopped
+ Container bench-silo  Removing
+ Container bench-silo  Removed
+ Volume bench-silo_silo-d1  Removing
+ Volume bench-silo_silo-d2  Removing
+ Volume bench-silo_silo-d3  Removing
+ Volume bench-silo_silo-d0  Removing
+ Volume bench-silo_silo-d1  Removed
+ Volume bench-silo_silo-d2  Removed
+ Volume bench-silo_silo-d3  Removed
+ Volume bench-silo_silo-d0  Removed
+   -> status=ok  exit=0  131s
+   disk after teardown: 26 GiB free
+[13/24] rustfs c1 small c32 r1 -- --force: discarding the existing result and re-running
+[13/24] rustfs c1 small c32 r1 -- 2026-08-20T09:49:52Z
+   disk: 26 GiB free, small/c1 needs 11 GiB
+ Volume bench-rustfs_rustfs-d0  Creating
+ Volume bench-rustfs_rustfs-d0  Created
+ Container bench-rustfs  Creating
+ Container bench-rustfs  Created
+ Container bench-rustfs  Starting
+ Container bench-rustfs  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/rustfs__c1__small__c32__r1.json  status=ok
+ Container bench-rustfs  Stopping
+ Container bench-rustfs  Stopped
+ Container bench-rustfs  Removing
+ Container bench-rustfs  Removed
+ Volume bench-rustfs_rustfs-d0  Removing
+ Volume bench-rustfs_rustfs-d0  Removed
+   -> status=ok  exit=0  161s
+   disk after teardown: 31 GiB free
+[14/24] rustfs c1 medium c32 r1 -- --force: discarding the existing result and re-running
+[14/24] rustfs c1 medium c32 r1 -- 2026-08-20T09:52:33Z
+   disk: 31 GiB free, medium/c1 needs 21 GiB
+ Volume bench-rustfs_rustfs-d0  Creating
+ Volume bench-rustfs_rustfs-d0  Created
+ Container bench-rustfs  Creating
+ Container bench-rustfs  Created
+ Container bench-rustfs  Starting
+ Container bench-rustfs  Started
+  FATAL no_operation_errors: warp reported 3 error(s) in 863 requests (unexpected EOF)
+  WARN  no_analysis_artifact_errors: 3 of 863 requests (0.3476%) were discarded by warp's own record validation; warns above 0.01% -- and not all of them are known artefacts
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/rustfs__c1__medium__c32__r1.json  status=suspect
+ Container bench-rustfs  Stopping
+ Container bench-rustfs  Stopped
+ Container bench-rustfs  Removing
+ Container bench-rustfs  Removed
+ Volume bench-rustfs_rustfs-d0  Removing
+ Volume bench-rustfs_rustfs-d0  Removed
+!! -> status=SUSPECT  exit=1  108s  failed_checks: no_operation_errors,no_analysis_artifact_errors -- do not publish this run
+   disk after teardown: 28 GiB free
+[15/24] rustfs c1 bigdata-get c32 r1 -- --force: discarding the existing result and re-running
+[15/24] rustfs c1 bigdata-get c32 r1 -- 2026-08-20T09:54:21Z
+   disk: 28 GiB free, bigdata-get/c1 needs 17 GiB
+ Volume bench-rustfs_rustfs-d0  Creating
+ Volume bench-rustfs_rustfs-d0  Created
+ Container bench-rustfs  Creating
+ Container bench-rustfs  Created
+ Container bench-rustfs  Starting
+ Container bench-rustfs  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/rustfs__c1__bigdata-get__c32__r1.json  status=ok
+ Container bench-rustfs  Stopping
+ Container bench-rustfs  Stopped
+ Container bench-rustfs  Removing
+ Container bench-rustfs  Removed
+ Volume bench-rustfs_rustfs-d0  Removing
+ Volume bench-rustfs_rustfs-d0  Removed
+   -> status=ok  exit=0  161s
+   disk after teardown: 26 GiB free
+[16/24] rustfs c2 small c32 r1 -- --force: discarding the existing result and re-running
+[16/24] rustfs c2 small c32 r1 -- 2026-08-20T09:57:03Z
+   disk: 26 GiB free, small/c2 needs 11 GiB
+ Volume bench-rustfs_rustfs-d1  Creating
+ Volume bench-rustfs_rustfs-d1  Created
+ Volume bench-rustfs_rustfs-d2  Creating
+ Volume bench-rustfs_rustfs-d2  Created
+ Volume bench-rustfs_rustfs-d3  Creating
+ Volume bench-rustfs_rustfs-d3  Created
+ Volume bench-rustfs_rustfs-d0  Creating
+ Volume bench-rustfs_rustfs-d0  Created
+ Container bench-rustfs  Creating
+ Container bench-rustfs  Created
+ Container bench-rustfs  Starting
+ Container bench-rustfs  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/rustfs__c2__small__c32__r1.json  status=ok
+ Container bench-rustfs  Stopping
+ Container bench-rustfs  Stopped
+ Container bench-rustfs  Removing
+ Container bench-rustfs  Removed
+ Volume bench-rustfs_rustfs-d1  Removing
+ Volume bench-rustfs_rustfs-d0  Removing
+ Volume bench-rustfs_rustfs-d3  Removing
+ Volume bench-rustfs_rustfs-d2  Removing
+ Volume bench-rustfs_rustfs-d1  Removed
+ Volume bench-rustfs_rustfs-d3  Removed
+ Volume bench-rustfs_rustfs-d0  Removed
+ Volume bench-rustfs_rustfs-d2  Removed
+   -> status=ok  exit=0  305s
+   disk after teardown: 32 GiB free
+[17/24] rustfs c2 medium c32 r1 -- --force: discarding the existing result and re-running
+[17/24] rustfs c2 medium c32 r1 -- 2026-08-20T10:02:08Z
+   disk: 32 GiB free, medium/c2 needs 21 GiB
+ Volume bench-rustfs_rustfs-d3  Creating
+ Volume bench-rustfs_rustfs-d3  Created
+ Volume bench-rustfs_rustfs-d0  Creating
+ Volume bench-rustfs_rustfs-d0  Created
+ Volume bench-rustfs_rustfs-d1  Creating
+ Volume bench-rustfs_rustfs-d1  Created
+ Volume bench-rustfs_rustfs-d2  Creating
+ Volume bench-rustfs_rustfs-d2  Created
+ Container bench-rustfs  Creating
+ Container bench-rustfs  Created
+ Container bench-rustfs  Starting
+ Container bench-rustfs  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/rustfs__c2__medium__c32__r1.json  status=ok
+ Container bench-rustfs  Stopping
+ Container bench-rustfs  Stopped
+ Container bench-rustfs  Removing
+ Container bench-rustfs  Removed
+ Volume bench-rustfs_rustfs-d3  Removing
+ Volume bench-rustfs_rustfs-d0  Removing
+ Volume bench-rustfs_rustfs-d2  Removing
+ Volume bench-rustfs_rustfs-d1  Removing
+ Volume bench-rustfs_rustfs-d3  Removed
+ Volume bench-rustfs_rustfs-d2  Removed
+ Volume bench-rustfs_rustfs-d1  Removed
+ Volume bench-rustfs_rustfs-d0  Removed
+   -> status=ok  exit=0  113s
+   disk after teardown: 27 GiB free
+[18/24] rustfs c2 bigdata-get c32 r1 -- --force: discarding the existing result and re-running
+[18/24] rustfs c2 bigdata-get c32 r1 -- 2026-08-20T10:04:01Z
+   disk: 27 GiB free, bigdata-get/c2 needs 17 GiB
+ Volume bench-rustfs_rustfs-d3  Creating
+ Volume bench-rustfs_rustfs-d3  Created
+ Volume bench-rustfs_rustfs-d0  Creating
+ Volume bench-rustfs_rustfs-d0  Created
+ Volume bench-rustfs_rustfs-d1  Creating
+ Volume bench-rustfs_rustfs-d1  Created
+ Volume bench-rustfs_rustfs-d2  Creating
+ Volume bench-rustfs_rustfs-d2  Created
+ Container bench-rustfs  Creating
+ Container bench-rustfs  Created
+ Container bench-rustfs  Starting
+ Container bench-rustfs  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/rustfs__c2__bigdata-get__c32__r1.json  status=ok
+ Container bench-rustfs  Stopping
+ Container bench-rustfs  Stopped
+ Container bench-rustfs  Removing
+ Container bench-rustfs  Removed
+ Volume bench-rustfs_rustfs-d0  Removing
+ Volume bench-rustfs_rustfs-d3  Removing
+ Volume bench-rustfs_rustfs-d2  Removing
+ Volume bench-rustfs_rustfs-d1  Removing
+ Volume bench-rustfs_rustfs-d3  Removed
+ Volume bench-rustfs_rustfs-d0  Removed
+ Volume bench-rustfs_rustfs-d1  Removed
+ Volume bench-rustfs_rustfs-d2  Removed
+   -> status=ok  exit=0  112s
+   disk after teardown: 25 GiB free
+[19/24] seaweedfs c1 small c32 r1 -- --force: discarding the existing result and re-running
+[19/24] seaweedfs c1 small c32 r1 -- 2026-08-20T10:05:53Z
+   disk: 25 GiB free, small/c1 needs 11 GiB
+ Volume bench-seaweedfs_swfs-d0  Creating
+ Volume bench-seaweedfs_swfs-d0  Created
+ Container bench-seaweedfs  Creating
+ Container bench-seaweedfs  Created
+ Container bench-seaweedfs  Starting
+ Container bench-seaweedfs  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/seaweedfs__c1__small__c32__r1.json  status=ok
+ Container bench-seaweedfs  Stopping
+ Container bench-seaweedfs  Stopped
+ Container bench-seaweedfs  Removing
+ Container bench-seaweedfs  Removed
+ Volume bench-seaweedfs_swfs-d0  Removing
+ Volume bench-seaweedfs_swfs-d0  Removed
+   -> status=ok  exit=0  130s
+   disk after teardown: 31 GiB free
+[20/24] seaweedfs c1 medium c32 r1 -- --force: discarding the existing result and re-running
+[20/24] seaweedfs c1 medium c32 r1 -- 2026-08-20T10:08:03Z
+   disk: 31 GiB free, medium/c1 needs 21 GiB
+ Volume bench-seaweedfs_swfs-d0  Creating
+ Volume bench-seaweedfs_swfs-d0  Created
+ Container bench-seaweedfs  Creating
+ Container bench-seaweedfs  Created
+ Container bench-seaweedfs  Starting
+ Container bench-seaweedfs  Started
+/Users/mertcansaglam/MinIO alternatives/results/apple-m1-8gb-darwin/raw/seaweedfs__c1__medium__c32__r1.json  status=ok
+ Container bench-seaweedfs  Stopping
+ Container bench-seaweedfs  Stopped
+ Container bench-seaweedfs  Removing
+ Container bench-seaweedfs  Removed
+ Volume bench-seaweedfs_swfs-d0  Removing
+ Volume bench-seaweedfs_swfs-d0  Removed
+   -> status=ok  exit=0  109s
+   disk after teardown: 25 GiB free
+[21/24] seaweedfs c1 bigdata-get c32 r1 -- --force: discarding the existing result and re-running
+[21/24] seaweedfs c1 bigdata-get c32 r1 -- 2026-08-20T10:09:52Z
+   disk: 25 GiB free, bigdata-get/c1 needs 17 GiB
+ Volume bench-seaweedfs_swfs-d0  Creating
+ Volume bench-seaweedfs_swfs-d0  Created
+ Container bench-seaweedfs  Creating
+ Container bench-seaweedfs  Created
+ Container bench-seaweedfs  Starting
+ Container bench-seaweedfs  Started

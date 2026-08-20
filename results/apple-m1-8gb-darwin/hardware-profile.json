@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "profile_id": "apple-m1-8gb-darwin",
+  "fingerprint": "140c82422064",
+  "captured_at": "2026-08-19T21:11:00Z",
+  "host": {
+    "os": "darwin",
+    "os_version": "25.4.0",
+    "arch": "arm64",
+    "cpu_model": "Apple M1",
+    "cpu_cores": 8,
+    "ram_bytes": 8589934592
+  },
+  "container_runtime": {
+    "kind": "docker",
+    "client_version": "29.1.2",
+    "server_version": "29.1.3",
+    "vm_cpus": 8,
+    "vm_ram_bytes": 4109217792,
+    "vm_arch": "aarch64",
+    "storage_driver": "overlayfs"
+  },
+  "disk": {
+    "host_free_bytes": 32938967040
+  },
+  "images": {
+    "minio": "sha256:3804726ba5769adfbe099766e70477003ae0bfd1e1a3ea12268ef830f3ffdf39",
+    "silo": "sha256:2c00469c7b3b9537115727c059873869ec6d82b15fcabf8c75ff9961ae89161f",
+    "rustfs": "sha256:821d0244341a9c679b36f87d7b863e8e77cab86f712c26c6ba9ad5669f222e72",
+    "seaweedfs": "sha256:52ec3c86db6e726a6cfa74031051ce3fab28fdef1dcebec0574ddeb14670b453"
+  },
+  "warp": "v1.6.1"
+}

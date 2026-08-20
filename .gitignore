@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+bench/warp/warp-rdma_linux_arm64.tar.gz
+results/**/tmp/
+
+# warp's per-request benchdata (--full). Deliberately untracked -- NOT an
+# oversight; see the note in bench/assemble_result.py before "fixing" this.
+# The full matrix produces ~300 MB of it, which would make the contributed-
+# results workflow in CONTRIBUTING.md unusable. The derived result JSON,
+# the telemetry CSV and the warp log ARE tracked, and each result records the
+# benchdata's size and SHA256 so it can still be identified and re-analysed.
+results/**/*.benchdata.*
