@@ -661,10 +661,23 @@ def main(argv):
         "server_cpu_budget_pct": server_cpu_budget_pct,
         "started_at": env["BENCH_STARTED_AT"],
         "ended_at": env["BENCH_ENDED_AT"],
-        # The benchdata may be kept outside the repository (a --full matrix
-        # runs to hundreds of MB), so the result carries its size and digest:
-        # whoever holds the file can prove it is the one these numbers came
-        # from, and `warp analyze` can regenerate everything from it.
+        # BENCHDATA IS DELIBERATELY NOT COMMITTED -- see the matching rule in
+        # .gitignore. This is a decision, not an oversight, and "fixing" it
+        # would break something real: the project's answer to being measured on
+        # one laptop is CONTRIBUTING.md inviting people to run this harness on
+        # their own hardware and send the results as a pull request. Tracked
+        # result JSONs, telemetry and logs come to roughly 6 MB for a full
+        # matrix; adding warp's per-request records would make it ~300 MB per
+        # contributor, growing with every hardware profile, which kills that
+        # workflow outright.
+        #
+        # The chain of evidence does not depend on those bytes being in git.
+        # True quantiles are computed from the records HERE, at assemble time,
+        # and land in the result. The size and SHA256 below identify the exact
+        # file they came from, so a contributor keeps their benchdata locally
+        # and can offer it out of band if one of their figures is ever
+        # disputed, and anyone re-running the harness can compare both the
+        # derived figures and the hashes.
         "benchdata_file": os.path.basename(benchdata_path) if benchdata_path not in ("", "-") else None,
         "benchdata_bytes": int(env.get("BENCH_BENCHDATA_BYTES") or 0) or None,
         "benchdata_sha256": env.get("BENCH_BENCHDATA_SHA256") or None,
