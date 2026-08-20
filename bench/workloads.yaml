@@ -24,7 +24,16 @@ warp:
   #                addressing from the hostname. All four systems are
   #                path-style only, and letting an auto-detect vary between
   #                systems would be a silent confounder.
-  common_args: ["--no-color", "--lookup=path"]
+  #   --full       records every request instead of pre-aggregated 10-second
+  #                windows. This is the difference between publishing a real
+  #                p99 and publishing a mean of p99s: without it warp's stored
+  #                data contains no per-request latencies at all, and no later
+  #                analysis can recover them (verified -- `analyze
+  #                --analyze.dur=1m` on non-full data still returns the same 7
+  #                windows with merged_entries 1). The decision has to be made
+  #                before the matrix runs, because afterwards the information
+  #                simply is not there.
+  common_args: ["--no-color", "--lookup=path", "--full"]
 
   # The load generator's own budget. It sits OUTSIDE the 6 CPU / 2048m
   # per-system budget but competes for the same 8 vCPU / 3.9 GiB Docker VM.
@@ -56,6 +65,14 @@ credentials:
   secret_key: "benchsecret0"
 
 defaults:
+  # write_gib_estimate feeds bench/run-workload.sh's pre-run disk guard, which
+  # scales its floor to what the profile actually writes (doubled for config-2,
+  # which stores a second copy or parity, plus slack). A flat floor is not
+  # enough: a PUT-only profile can clear a 10 GiB check and still fill the disk
+  # before it finishes. Figures are from observed rates on this hardware; they
+  # only need to be the right order of magnitude.
+  write_gib_estimate: 5
+
   # No warmup key. warp v1.6.1 has no --warmup flag, and --analyze.skip is
   # inert on the data warp actually writes (verified: identical analysis for
   # --analyze.skip=0s, 5s, 8s and 11s of a 12s measured window, with and
@@ -72,14 +89,17 @@ defaults:
 profiles:
   - id: small
     op: mixed
+    write_gib_estimate: 0.5  # 20k x 4 KiB prepared, mixed ops delete as they go
     args: ["--obj.size=4KiB", "--objects=20000"]
 
   - id: medium
     op: mixed
+    write_gib_estimate: 5  # 2 GiB prepared plus ~3 GiB of PUT traffic; measured 4.07 GiB
     args: ["--obj.size=1MiB", "--objects=2000"]
 
   - id: bigdata-get
     op: get
+    write_gib_estimate: 5  # 200 x 20 MiB prepared once, GET-only afterwards
     args: ["--obj.size=20MiB", "--objects=200"]
 
   # PUT-only profiles grow the backing store for the whole run and nothing
@@ -90,6 +110,7 @@ profiles:
   # systems, and only same-profile numbers are ever compared.
   - id: bigdata-put
     op: put
+    write_gib_estimate: 8  # PUT-only: 30s at the observed ~250 MiB/s
     duration_seconds: 30
     args: ["--obj.size=20MiB"]
 
@@ -101,6 +122,7 @@ profiles:
   # profile ran at 32.
   - id: multipart
     op: multipart-put
+    write_gib_estimate: 6  # PUT-only: 30s of completed 128 MiB multipart uploads
     duration_seconds: 30
     args: ["--parts=16", "--part.size=8MiB", "--part.concurrent=1"]
 
@@ -110,6 +132,7 @@ profiles:
   # matrix), so pagination is genuinely exercised.
   - id: list
     op: list
+    write_gib_estimate: 1  # 20k x 1 KiB prepared, LIST-only afterwards
     args: ["--objects=20000", "--obj.size=1KiB"]
 
 # The concurrency sweep runs on one profile only. Sweeping every profile

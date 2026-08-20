@@ -210,10 +210,20 @@ docker = Docker(socket_path)
 previous = {}
 
 with open(out_path, "w", buffering=1) as fh:
-    fh.write("ts,epoch,role,container,cpu_pct,mem_bytes,mem_limit_bytes,"
+    fh.write("cycle,ts,epoch,role,container,cpu_pct,mem_bytes,mem_limit_bytes,"
              "net_rx_bytes,net_tx_bytes,blk_read_bytes,blk_write_bytes\n")
+    cycle = 0
     while True:
+        cycle += 1
         cycle_started = time.monotonic()
+        # One timestamp for the whole cycle, and an explicit cycle counter.
+        # Stamping each row as it is written let a cycle straddle a second
+        # boundary -- 10 of 92 cycles did, under load -- and the assembler,
+        # which groups a system's containers into per-instant totals, then saw
+        # SeaweedFS config-2's five containers as two partial instants and
+        # understated its per-system CPU accordingly.
+        cycle_ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        cycle_epoch = str(int(time.time()))
         containers = docker.get("/containers/json") or []
         wanted = []
         for entry in containers:
@@ -256,8 +266,9 @@ with open(out_path, "w", buffering=1) as fh:
             rx, tx = netio(stats)
             read, write = blkio(stats)
             fh.write(",".join([
-                time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-                str(int(time.time())),
+                str(cycle),
+                cycle_ts,
+                cycle_epoch,
                 role,
                 name,
                 "%.2f" % cpu_pct,
