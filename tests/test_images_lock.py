@@ -42,6 +42,40 @@ def test_platform_is_arm64():
     assert load()["platform"] == "linux/arm64"
 
 
+def test_helper_debian_pinned_by_digest():
+    # bench/warp/Dockerfile builds the load generator on this base. warp v1.6.1
+    # ships a dynamically linked glibc binary, so the base image is part of what
+    # the client actually is -- a floating tag could change the client's libc
+    # halfway through a multi-hour study.
+    debian = load()["helpers"]["debian"]
+    assert DIGEST_RE.match(debian["digest"]), f"debian digest malformed: {debian['digest']}"
+
+
+def test_warp_dockerfile_uses_the_locked_base():
+    dockerfile = BENCH_DIR / "warp" / "Dockerfile"
+    assert dockerfile.is_file(), f"{dockerfile} missing"
+    text = dockerfile.read_text()
+    digest = load()["helpers"]["debian"]["digest"]
+    assert f"@{digest}" in text, (
+        f"{dockerfile} does not build on the locked debian digest ({digest})"
+    )
+    # Every FROM must be pinned, not just the first one.
+    for line in text.splitlines():
+        if line.strip().upper().startswith("FROM "):
+            assert "@sha256:" in line, f"unpinned base image: {line.strip()}"
+
+
+def test_warp_dockerfile_verifies_the_release_checksum():
+    # The whole reason warp is built from a release asset instead of pulled as
+    # an image is that the asset can be pinned by content. A Dockerfile that
+    # downloads without checking the checksum would throw that away.
+    warp = load()["warp"]
+    text = (BENCH_DIR / "warp" / "Dockerfile").read_text()
+    assert warp["sha256"] in text, "Dockerfile does not carry the locked warp checksum"
+    assert "sha256sum -c" in text, "Dockerfile does not verify the downloaded asset"
+    assert warp["asset"] in text, "Dockerfile does not fetch the locked asset name"
+
+
 def test_helper_curl_pinned_by_digest():
     # Ruling C: bench/stack.sh polls S3 endpoints with curlimages/curl. An
     # unpinned helper could change readiness detection mid-study with nothing
@@ -54,13 +88,18 @@ def pinned_files():
     """Every file in the repo that pins an image by digest.
 
     Not just compose/: bench/stack.sh and bench/measure-usable-ratio.sh both
-    hardcode the pinned curl helper. Globbing only compose/*.yaml left this
-    test blind to two of the three places a digest appears, so either script
-    could drift from images.lock with nothing failing -- which is exactly the
-    drift Ruling A exists to catch, and exactly what Ruling E (no unpinned
+    hardcode the pinned curl helper, and bench/warp/Dockerfile pins the base
+    image the load generator is built on. Globbing only compose/*.yaml left
+    this test blind to most of the places a digest appears, so any of those
+    files could drift from images.lock with nothing failing -- which is exactly
+    the drift Ruling A exists to catch, and exactly what Ruling E (no unpinned
     helper image) depends on this test to enforce.
     """
-    return sorted(COMPOSE_DIR.glob("*.yaml")) + sorted(BENCH_DIR.glob("*.sh"))
+    return (
+        sorted(COMPOSE_DIR.glob("*.yaml"))
+        + sorted(BENCH_DIR.glob("*.sh"))
+        + sorted(BENCH_DIR.rglob("Dockerfile"))
+    )
 
 
 def test_pinned_digests_match_lock():

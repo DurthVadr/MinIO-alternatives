@@ -29,6 +29,11 @@
       "ref": "curlimages/curl:8.11.1",
       "digest": "sha256:012fd1b212b09992bad38e2f911cac0bfbcadd0f8060fb4558fc2d74f8435a4a",
       "note": "Used by bench/stack.sh to poll S3 endpoints for readiness. Pinned so a helper image change can never silently alter readiness detection mid-study."
+    },
+    "debian": {
+      "ref": "debian:trixie-slim",
+      "digest": "sha256:3a39a0592364683e6bab97937b72cad5a8fa6dcbbee90edb3bb48c7f8e94f258",
+      "note": "Base image for bench/warp/Dockerfile. The warp v1.6.1 linux/arm64 asset is a dynamically linked glibc binary needing glibc >= 2.38 and GLIBCXX_3.4.32, so it cannot run on alpine (musl) and will not run on bookworm-slim (glibc 2.36, verified). Pinned so the load generator's runtime can never change mid-study."
     }
   },
   "warp": {

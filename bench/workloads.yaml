@@ -1,0 +1,151 @@
+# Workload matrix for the four-system comparison.
+#
+# Object sizes are chosen to separate the claims under test:
+#   small        - RustFS advertises 2.3x MinIO at 4 KiB
+#   medium       - the general-purpose middle ground; also the sweep profile
+#   bigdata-get  - independent reports put MinIO ahead on ~20 MiB sequential reads
+#   bigdata-put  - the write side of the same size class
+#   multipart    - large-object upload, the path every backup/archive tool takes
+#   list         - the operation lakehouse catalogs hammer
+#
+# Every flag below was checked against `warp <op> --help` in the pinned
+# v1.6.1 image. See the CORRECTIONS block at the bottom of this file for the
+# ones the brief guessed wrong.
+schema: 1
+
+warp:
+  # Built locally by bench/warp/Dockerfile; pinned by the release asset's
+  # SHA256 recorded in images.lock, not by a floating tag.
+  image: "bench-warp:1.6.1"
+
+  # Applied to every measured run.
+  #   --no-color   keeps the captured log free of ANSI escapes.
+  #   --lookup     warp otherwise auto-detects host-style vs path-style
+  #                addressing from the hostname. All four systems are
+  #                path-style only, and letting an auto-detect vary between
+  #                systems would be a silent confounder.
+  common_args: ["--no-color", "--lookup=path"]
+
+  # The load generator's own budget. It sits OUTSIDE the 6 CPU / 2048m
+  # per-system budget but competes for the same 8 vCPU / 3.9 GiB Docker VM.
+  #
+  # Bounding it is deliberate. An unlimited warp would take whatever the
+  # server left idle, so the client's speed would become a function of the
+  # server's -- a fast system would hand its client more CPU than a slow one
+  # and partly measure that. A fixed 2.0 CPU / 1024m client gives every
+  # system an identical load generator. 6 (system) + 2 (client) exactly
+  # partitions the VM's 8 vCPUs, and 2048m + 1024m of 3919m leaves the
+  # daemon and page cache room.
+  #
+  # The risk of bounding it is that warp becomes the bottleneck and we
+  # publish client numbers as storage numbers. That is not left to trust:
+  # bench/telemetry.sh samples the warp container as role=client and every
+  # result file carries telemetry.client.cpu_pct_mean plus a
+  # client_not_saturated check, so a client-limited run is visible in its own
+  # output.
+  client:
+    cpus: "2.0"
+    memory: "1024m"
+    container_name: "bench-warp"
+
+# Fixed benchmark credentials. Not secrets -- these are the same values
+# hardcoded in compose/*.yaml for every system, repeated here so the runner
+# has one place to read them from.
+credentials:
+  access_key: "benchuser"
+  secret_key: "benchsecret0"
+
+defaults:
+  # No warmup key. warp v1.6.1 has no --warmup flag, and --analyze.skip is
+  # inert on the data warp actually writes (verified: identical analysis for
+  # --analyze.skip=0s, 5s, 8s and 11s of a 12s measured window, with and
+  # without --full). What warp does instead is trim its own ramp-up and
+  # ramp-down automatically -- a 15s run reports "Ran Duration: 12s" -- and
+  # the prepare phase writes or reads GiBs before the clock starts, which is
+  # the warmup in practice. Reporting warp's own window keeps our published
+  # numbers reproducible by anyone running the same warp command by hand;
+  # re-deriving a warmup skip ourselves would not.
+  duration_seconds: 60
+  concurrency: 32
+  bucket: "warp-bench"
+
+profiles:
+  - id: small
+    op: mixed
+    args: ["--obj.size=4KiB", "--objects=20000"]
+
+  - id: medium
+    op: mixed
+    args: ["--obj.size=1MiB", "--objects=2000"]
+
+  - id: bigdata-get
+    op: get
+    args: ["--obj.size=20MiB", "--objects=200"]
+
+  # PUT-only profiles grow the backing store for the whole run and nothing
+  # deletes as they go, unlike `mixed`. At the ~250 MiB/s a single-drive
+  # config reaches here, 60s would write ~15 GiB per run into a Docker
+  # Desktop disk image that does not shrink when the bucket is cleared. 30s
+  # halves that. Comparability is unaffected: it is the same 30s for all four
+  # systems, and only same-profile numbers are ever compared.
+  - id: bigdata-put
+    op: put
+    duration_seconds: 30
+    args: ["--obj.size=20MiB"]
+
+  # 16 parts x 8 MiB = the 128 MiB object the brief asked for.
+  # --part.concurrent=1 keeps `concurrency` meaning the same thing here as in
+  # every other profile: warp's total in-flight requests are
+  # --concurrent x --part.concurrent, so leaving the default 20 would have
+  # made this profile run at 32x20 = 640 in-flight requests while every other
+  # profile ran at 32.
+  - id: multipart
+    op: multipart-put
+    duration_seconds: 30
+    args: ["--parts=16", "--part.size=8MiB", "--part.concurrent=1"]
+
+  # 20 objects per LIST page (warp's --max-keys default is 100), 20k keys ->
+  # pagination is genuinely exercised, 20x past the 1000-key page cap.
+  - id: list
+    op: list
+    args: ["--objects=20000", "--obj.size=1KiB"]
+
+# The concurrency sweep runs on one profile only. Sweeping every profile
+# would push the full matrix past 10 hours on this hardware for little extra
+# signal.
+sweep:
+  profile: medium
+  concurrency: [8, 64]
+
+rounds: 3
+
+# ---------------------------------------------------------------------------
+# CORRECTIONS to the brief's guessed workload matrix, all verified against the
+# pinned v1.6.1 image:
+#
+# 1. `multipart` -> `multipart-put`. `warp multipart` DOES exist in v1.6.1
+#    (the brief suspected it might not), but it is the wrong operation and the
+#    brief's flags for it are invalid. It has no --obj.size at all
+#    ("Incorrect Usage: flag provided but not defined: -obj.size"), and per
+#    warp's own README it "will upload parts to a _single_ object, and
+#    afterwards test download speed of parts" -- it never calls
+#    CompleteMultipartUpload, and a probe run against MinIO reported a
+#    GET-dominated result. `multipart-put` is the real multipart upload path:
+#    "creates multipart upload, uploads --parts parts of --part.size size each
+#    and completes multipart upload when all parts are uploaded". All four
+#    systems pass CompleteMultipartUpload in the Task 4 conformance matrix, so
+#    it is a fair comparison. Reported op is PUTPART.
+#
+# 2. list --objects 100000 -> 20000. warp prepares (uploads) every listed
+#    object before the clock starts and deletes them after. A probe measured
+#    ~2000 objects costing ~15s of prepare+cleanup at concurrency 8; 100k
+#    would add roughly four minutes of un-measured wall clock to EVERY list
+#    run -- about 100 minutes across the 24 list runs in the full matrix, on
+#    top of a time budget the brief already put at ~4 hours. 20k still pages
+#    20x past the 1000-key cap.
+#
+# 3. `--obj.size=128MiB --parts=16` -> `--parts=16 --part.size=8MiB`. Same
+#    object size, flags that exist.
+#
+# 4. warmup removed from defaults -- see the comment on `defaults` above.
+# ---------------------------------------------------------------------------
