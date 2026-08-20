@@ -526,7 +526,7 @@ def test_an_op_without_per_request_ttfb_falls_back_rather_than_losing_it():
     assert latency["source"] == "per_request"
     assert latency["request_millis"]["p50"] == pytest.approx(20.0)
     assert latency["ttfb_source"] == "window_summary"
-    assert latency["ttfb_window_summary"]["mean_millis"] == pytest.approx(111.6)
+    assert latency["ttfb_window_summary"]["ttfb"]["mean_millis"] == pytest.approx(111.6)
 
 
 def test_an_op_with_no_ttfb_anywhere_says_so():
@@ -546,3 +546,37 @@ def test_an_op_with_no_ttfb_anywhere_says_so():
     records = {"STAT": {"ttfb": [], "request": [9.9], "requests": 1, "errors": 0}}
     metrics = ar.build_metrics(analysis, records, None, None)
     assert metrics["by_op"]["STAT"]["latency"]["ttfb_source"] == "not_recorded"
+
+
+def test_fallback_ttfb_keeps_the_per_window_distribution():
+    """PUT is the only op that uses the fallback, so it must keep the spread.
+
+    Publishing just the `*_window_mean` scalars would discard the distribution
+    for exactly the operation the rename exists to protect -- there is no
+    per-request first_byte for PUT, so these windows are all there is.
+    """
+    analysis = {
+        "v": 2,
+        "total": {"throughput": {"measure_duration_millis": 1000}},
+        "by_op_type": {"PUT": {
+            "total_requests": 900, "total_errors": 0,
+            "throughput": {"measure_duration_millis": 1000, "segmented": {}},
+            "requests_by_client": {"c1": [
+                _window("2026-08-20T00:00:00Z", "2026-08-20T00:00:10Z", 600, 100.0),
+                _window("2026-08-20T00:00:10Z", "2026-08-20T00:00:20Z", 300, 200.0),
+            ]},
+        }},
+    }
+    records = {"PUT": {"ttfb": [], "request": [10.0], "requests": 1, "errors": 0}}
+    summary = ar.build_metrics(analysis, records, None, None)["by_op"]["PUT"]["latency"]["ttfb_window_summary"]
+
+    assert summary["windows"] == 2
+    assert summary["requests"] == 900
+    assert "request-weighted" in summary["weighting"]
+    assert [w["requests"] for w in summary["per_window"]] == [600, 300]
+    assert [w["ttfb_p50_millis"] for w in summary["per_window"]] == [100.0, 200.0]
+    assert summary["ttfb"]["mean_millis"] == pytest.approx((600 * 100.0 + 300 * 200.0) / 900)
+    # The request-duration block is left out: true quantiles for that quantity
+    # already live in latency["request_millis"], and two answers to one
+    # question is worse than one.
+    assert "request" not in summary

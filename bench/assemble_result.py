@@ -345,10 +345,28 @@ def build_metrics(analysis, full_records, window_start, window_end):
                 # for those operations true TTFB quantiles are simply not
                 # recoverable from --full, and falling back to warp's own
                 # aggregate beats silently publishing no PUT latency at all.
-                ttfb_windows = (window_summary or {}).get("ttfb")
-                if ttfb_windows:
+                if (window_summary or {}).get("ttfb"):
                     latency["ttfb_source"] = "window_summary"
-                    latency["ttfb_window_summary"] = ttfb_windows
+                    # Keep the whole envelope, not just the scalar block. This
+                    # is the ONLY operation that uses the fallback -- GET has
+                    # true quantiles and DELETE/STAT have no TTFB at all -- so
+                    # publishing only the `*_window_mean` scalars here would
+                    # discard the distribution for precisely the case the
+                    # rename exists to protect. Task 7 needs `per_window` to
+                    # render PUT latency as a spread rather than one number.
+                    #
+                    # The `request` sub-block is deliberately left out: true
+                    # request-duration quantiles are already in
+                    # latency["request_millis"] above, and carrying warp's
+                    # window means for the same quantity alongside them would
+                    # give a reader two different answers to one question.
+                    latency["ttfb_window_summary"] = {
+                        "windows": window_summary["windows"],
+                        "requests": window_summary["requests"],
+                        "weighting": window_summary["weighting"],
+                        "ttfb": window_summary["ttfb"],
+                        "per_window": window_summary["per_window"],
+                    }
                 else:
                     latency["ttfb_source"] = "not_recorded"
         else:

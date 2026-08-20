@@ -343,14 +343,77 @@
           },
           "ttfb_source": "window_summary",
           "ttfb_window_summary": {
-            "mean_millis": 250.29109369948944,
-            "p25_millis_window_mean": 146.34784673595914,
-            "p50_millis_window_mean": 206.2077049989059,
-            "p75_millis_window_mean": 295.794502761488,
-            "p90_millis_window_mean": 432.5594834803063,
-            "p99_millis_window_mean": 854.4475149059082,
-            "min_millis": 28.950833,
-            "max_millis": 3350.866377
+            "windows": 7,
+            "requests": 2742,
+            "weighting": "request-weighted mean across warp's aggregation windows",
+            "ttfb": {
+              "mean_millis": 250.29109369948944,
+              "p25_millis_window_mean": 146.34784673595914,
+              "p50_millis_window_mean": 206.2077049989059,
+              "p75_millis_window_mean": 295.794502761488,
+              "p90_millis_window_mean": 432.5594834803063,
+              "p99_millis_window_mean": 854.4475149059082,
+              "min_millis": 28.950833,
+              "max_millis": 3350.866377
+            },
+            "per_window": [
+              {
+                "start_time": "2026-08-20T06:15:15Z",
+                "end_time": "2026-08-20T06:15:25Z",
+                "requests": 715,
+                "ttfb_p50_millis": 126.923208,
+                "ttfb_p99_millis": 347.93025,
+                "request_p50_millis": 133.346208
+              },
+              {
+                "start_time": "2026-08-20T06:15:25Z",
+                "end_time": "2026-08-20T06:15:35Z",
+                "requests": 532,
+                "ttfb_p50_millis": 198.999875,
+                "ttfb_p99_millis": 674.357292,
+                "request_p50_millis": 204.034708
+              },
+              {
+                "start_time": "2026-08-20T06:15:35Z",
+                "end_time": "2026-08-20T06:15:45Z",
+                "requests": 267,
+                "ttfb_p50_millis": 385.948917,
+                "ttfb_p99_millis": 908.498625,
+                "request_p50_millis": 389.409625
+              },
+              {
+                "start_time": "2026-08-20T06:15:45Z",
+                "end_time": "2026-08-20T06:15:55Z",
+                "requests": 241,
+                "ttfb_p50_millis": 338.350917,
+                "ttfb_p99_millis": 3330.914793,
+                "request_p50_millis": 351.44675
+              },
+              {
+                "start_time": "2026-08-20T06:15:55Z",
+                "end_time": "2026-08-20T06:16:05Z",
+                "requests": 535,
+                "ttfb_p50_millis": 169.249792,
+                "ttfb_p99_millis": 704.856376,
+                "request_p50_millis": 176.588417
+              },
+              {
+                "start_time": "2026-08-20T06:16:05Z",
+                "end_time": "2026-08-20T06:16:15Z",
+                "requests": 445,
+                "ttfb_p50_millis": 205.6495,
+                "ttfb_p99_millis": 697.047584,
+                "request_p50_millis": 218.331876
+              },
+              {
+                "start_time": "2026-08-20T06:16:15Z",
+                "end_time": "2026-08-20T06:16:25Z",
+                "requests": 7,
+                "ttfb_p50_millis": 307.128833,
+                "ttfb_p99_millis": 394.70625,
+                "request_p50_millis": 308.501667
+              }
+            ]
           }
         }
       },
