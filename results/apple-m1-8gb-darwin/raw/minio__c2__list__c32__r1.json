@@ -1,0 +1,364 @@
+{
+  "schema": 2,
+  "status": "ok",
+  "failed_checks": [],
+  "hardware_profile": {
+    "schema": 1,
+    "profile_id": "apple-m1-8gb-darwin",
+    "fingerprint": "140c82422064",
+    "captured_at": "2026-08-20T09:20:17Z",
+    "host": {
+      "os": "darwin",
+      "os_version": "25.4.0",
+      "arch": "arm64",
+      "cpu_model": "Apple M1",
+      "cpu_cores": 8,
+      "ram_bytes": 8589934592
+    },
+    "container_runtime": {
+      "kind": "docker",
+      "client_version": "29.1.2",
+      "server_version": "29.1.3",
+      "vm_cpus": 8,
+      "vm_ram_bytes": 4109217792,
+      "vm_arch": "aarch64",
+      "storage_driver": "overlayfs"
+    },
+    "disk": {
+      "host_free_bytes": 34462990336
+    },
+    "images": {
+      "minio": "sha256:3804726ba5769adfbe099766e70477003ae0bfd1e1a3ea12268ef830f3ffdf39",
+      "silo": "sha256:2c00469c7b3b9537115727c059873869ec6d82b15fcabf8c75ff9961ae89161f",
+      "rustfs": "sha256:821d0244341a9c679b36f87d7b863e8e77cab86f712c26c6ba9ad5669f222e72",
+      "seaweedfs": "sha256:52ec3c86db6e726a6cfa74031051ce3fab28fdef1dcebec0574ddeb14670b453"
+    },
+    "warp": "v1.6.1"
+  },
+  "run": {
+    "system": "minio",
+    "config": "c2",
+    "profile": "list",
+    "concurrency": 32,
+    "round": 1,
+    "warp_op": "list",
+    "warp_args": [
+      "--no-color",
+      "--lookup=path",
+      "--full",
+      "--objects=20000",
+      "--obj.size=1KiB"
+    ],
+    "warp_image": "bench-warp:1.6.1",
+    "warp_image_id": "sha256:d1b87eb8d4d4d6686378e519f0732fcbb08e5c2a7ac1badd480c8e54bb59510c",
+    "duration_requested_seconds": 60,
+    "bucket": "warp-bench",
+    "endpoint": "bench-minio:9000",
+    "client": {
+      "container": "bench-warp",
+      "cpus": "2.0",
+      "memory": "1024m",
+      "on_network": "s3bench"
+    },
+    "expected_containers": [
+      "bench-minio"
+    ],
+    "server_cpu_budget_pct": 600.0,
+    "started_at": "2026-08-20T09:20:17Z",
+    "ended_at": "2026-08-20T09:21:52Z",
+    "benchdata_file": "minio__c2__list__c32__r1.benchdata.csv.zst",
+    "benchdata_bytes": 944364,
+    "benchdata_sha256": "3cfd5d7459f033e7f3c268731b958c3b2035b8ba1d3f40bc0fc5c45025de3fd6",
+    "host_disk_free_bytes_before": 34462928896,
+    "host_disk_free_bytes_after": 33741815808,
+    "host_disk_required_bytes": 11811160064,
+    "warp_commandline": ""
+  },
+  "checks": [
+    {
+      "name": "warp_exit_zero",
+      "ok": true,
+      "severity": "fatal",
+      "detail": "warp exit code 0"
+    },
+    {
+      "name": "analysis_parsed",
+      "ok": true,
+      "severity": "fatal",
+      "detail": "warp analyze --json produced a readable document"
+    },
+    {
+      "name": "no_operation_errors",
+      "ok": true,
+      "severity": "fatal",
+      "detail": "warp reported 0 error(s) in 21962 requests"
+    },
+    {
+      "name": "no_analysis_artifact_errors",
+      "ok": true,
+      "severity": "warn",
+      "detail": "0 of 21962 requests (0.0000%) were discarded by warp's own record validation; warns above 0.01%"
+    },
+    {
+      "name": "measured_window_plausible",
+      "ok": true,
+      "severity": "fatal",
+      "detail": "measured 81.0s of a requested 60s window (warp trims its own ramp)"
+    },
+    {
+      "name": "work_was_done",
+      "ok": true,
+      "severity": "fatal",
+      "detail": "21962 requests recorded"
+    },
+    {
+      "name": "latency_from_per_request_records",
+      "ok": true,
+      "severity": "warn",
+      "detail": "latency source is 'per_request'; only per-request records (warp --full) give true quantiles"
+    },
+    {
+      "name": "telemetry_has_samples",
+      "ok": true,
+      "severity": "fatal",
+      "detail": "83 server telemetry sample instants"
+    },
+    {
+      "name": "telemetry_containers_complete",
+      "ok": true,
+      "severity": "fatal",
+      "detail": "sampled ['bench-minio']; expected ['bench-minio']"
+    },
+    {
+      "name": "telemetry_client_sampled",
+      "ok": true,
+      "severity": "warn",
+      "detail": "83 client telemetry sample instants"
+    },
+    {
+      "name": "telemetry_cpu_plausible",
+      "ok": true,
+      "severity": "warn",
+      "detail": "0% of server CPU samples exceeded the 600.0% cgroup budget by more than 10%; worst was 0.96x of it"
+    },
+    {
+      "name": "server_cpu_had_headroom",
+      "ok": true,
+      "severity": "info",
+      "detail": "server averaged unknown of its 600.0% budget"
+    },
+    {
+      "name": "client_not_saturated",
+      "ok": true,
+      "severity": "warn",
+      "detail": "warp averaged 0.33 of its 200.0% CPU budget; above ~0.90 the number is the client's, not the server's"
+    },
+    {
+      "name": "disk_headroom_after_run",
+      "ok": true,
+      "severity": "warn",
+      "detail": "31.4 GiB free after the run against 11.0 GiB needed for another one; Docker Desktop reclaims freed volume space on its own schedule"
+    }
+  ],
+  "telemetry": {
+    "rows_total": 186,
+    "rows_in_window": 166,
+    "server": {
+      "samples": 83,
+      "containers": [
+        "bench-minio"
+      ],
+      "cpu_pct_sum_mean": 457.3433734939759,
+      "cpu_pct_sum_max": 578.92,
+      "mem_bytes_sum_mean": 931301992.8674699,
+      "mem_bytes_sum_peak": 1160802304,
+      "per_container": {
+        "bench-minio": {
+          "samples": 83,
+          "cpu_pct_mean": 457.3433734939759,
+          "cpu_pct_max": 578.92,
+          "mem_bytes_mean": 931301992.8674699,
+          "mem_bytes_peak": 1160802304,
+          "mem_limit_bytes": 2147483648
+        }
+      },
+      "cpu_pct_budget": 600.0,
+      "cpu_pct_samples_over_budget": 0,
+      "cpu_pct_fraction_over_budget": 0.0,
+      "cpu_pct_samples_over_budget_material": 0,
+      "cpu_pct_fraction_over_budget_material": 0.0,
+      "cpu_pct_max_over_budget_ratio": 0.9648666666666667
+    },
+    "client": {
+      "samples": 83,
+      "containers": [
+        "bench-warp"
+      ],
+      "cpu_pct_sum_mean": 65.62506024096386,
+      "cpu_pct_sum_max": 107.98,
+      "mem_bytes_sum_mean": 58954566.93975904,
+      "mem_bytes_sum_peak": 65863680,
+      "per_container": {
+        "bench-warp": {
+          "samples": 83,
+          "cpu_pct_mean": 65.62506024096386,
+          "cpu_pct_max": 107.98,
+          "mem_bytes_mean": 58954566.93975904,
+          "mem_bytes_peak": 65863680,
+          "mem_limit_bytes": 1073741824
+        }
+      },
+      "cpu_pct_limit": 200.0,
+      "cpu_saturation_mean": 0.3281253012048193
+    },
+    "csv": "minio__c2__list__c32__r1.telemetry.csv",
+    "window": {
+      "source": "warp total.start_time..total.end_time",
+      "start_epoch": 1787217618.204335,
+      "end_epoch": 1787217702.3019516
+    }
+  },
+  "metrics": {
+    "analysis_schema_version": 2,
+    "latency_source": "per_request",
+    "total": {
+      "measure_duration_seconds": 81.0,
+      "requests": 21962,
+      "objects": 1246250,
+      "bytes": 20480000,
+      "errors": 0,
+      "bytes_per_sec_avg": 225256.57646990506,
+      "obj_per_sec_avg": 15061.866117551417,
+      "bytes_per_sec_median": 0,
+      "bytes_per_sec_fastest": 1309219,
+      "bytes_per_sec_slowest": 0,
+      "obj_per_sec_median": 21497.57,
+      "obj_per_sec_fastest": 1278.53,
+      "obj_per_sec_slowest": 20795.12,
+      "segments": 81
+    },
+    "by_op": {
+      "LIST": {
+        "measure_duration_seconds": 58.0,
+        "requests": 1962,
+        "objects": 1226250,
+        "bytes": 0,
+        "errors": 0,
+        "bytes_per_sec_avg": 0.0,
+        "obj_per_sec_avg": 19993.585027616344,
+        "bytes_per_sec_median": 0,
+        "bytes_per_sec_fastest": 0,
+        "bytes_per_sec_slowest": 0,
+        "obj_per_sec_median": 20346.62,
+        "obj_per_sec_fastest": 31383.26,
+        "obj_per_sec_slowest": 13614.71,
+        "segments": 58,
+        "latency": {
+          "source": "per_request",
+          "records": 1962,
+          "record_errors": 0,
+          "request_millis": {
+            "samples": 1962,
+            "mean": 986.6839865754332,
+            "min": 178.350084,
+            "p50": 978.1260004999999,
+            "p90": 1296.5356173,
+            "p95": 1401.2624708499998,
+            "p99": 1635.4138323799982,
+            "max": 1888.102001,
+            "stddev": 242.30462923931285,
+            "method": "linear interpolation between closest ranks"
+          },
+          "ttfb_millis": {
+            "samples": 1962,
+            "mean": 187.03239348078114,
+            "min": 14.826297760009766,
+            "p50": 175.5375862121582,
+            "p90": 296.0498332977295,
+            "p95": 345.838153362274,
+            "p99": 440.0263905525206,
+            "max": 571.1641311645508,
+            "stddev": 83.59890943758295,
+            "method": "linear interpolation between closest ranks"
+          },
+          "ttfb_source": "per_request"
+        }
+      },
+      "PUT": {
+        "measure_duration_seconds": 17.0,
+        "requests": 20000,
+        "objects": 20000,
+        "bytes": 20480000,
+        "errors": 0,
+        "bytes_per_sec_avg": 971326.8219477515,
+        "obj_per_sec_avg": 948.561349558351,
+        "bytes_per_sec_median": 966320,
+        "bytes_per_sec_fastest": 1309219,
+        "bytes_per_sec_slowest": 799384,
+        "obj_per_sec_median": 943.67,
+        "obj_per_sec_fastest": 1278.53,
+        "obj_per_sec_slowest": 780.65,
+        "segments": 17,
+        "latency": {
+          "source": "per_request",
+          "records": 20000,
+          "record_errors": 0,
+          "request_millis": {
+            "samples": 20000,
+            "mean": 32.1775299908,
+            "min": 2.429834,
+            "p50": 28.4416875,
+            "p90": 55.30230000000001,
+            "p95": 66.00379134999996,
+            "p99": 95.68738674999973,
+            "max": 200.98225,
+            "stddev": 18.95125749460416,
+            "method": "linear interpolation between closest ranks"
+          },
+          "ttfb_source": "window_summary",
+          "ttfb_window_summary": {
+            "windows": 3,
+            "requests": 20000,
+            "weighting": "request-weighted mean across warp's aggregation windows",
+            "ttfb": {
+              "mean_millis": 32.075395997049995,
+              "p25_millis_window_mean": 19.15897144215,
+              "p50_millis_window_mean": 28.328594195249998,
+              "p75_millis_window_mean": 40.2568105103,
+              "p90_millis_window_mean": 55.13980031405001,
+              "p99_millis_window_mean": 95.2814820398,
+              "min_millis": 2.370708,
+              "max_millis": 200.725167
+            },
+            "per_window": [
+              {
+                "start_time": "2026-08-20T09:20:18Z",
+                "end_time": "2026-08-20T09:20:28Z",
+                "requests": 9673,
+                "ttfb_p50_millis": 28.427375,
+                "ttfb_p99_millis": 98.209375,
+                "request_p50_millis": 28.558542
+              },
+              {
+                "start_time": "2026-08-20T09:20:28Z",
+                "end_time": "2026-08-20T09:20:38Z",
+                "requests": 9840,
+                "ttfb_p50_millis": 28.576292,
+                "ttfb_p99_millis": 94.309875,
+                "request_p50_millis": 28.652292
+              },
+              {
+                "start_time": "2026-08-20T09:20:38Z",
+                "end_time": "2026-08-20T09:20:48Z",
+                "requests": 487,
+                "ttfb_p50_millis": 21.36175,
+                "ttfb_p99_millis": 56.758083,
+                "request_p50_millis": 21.453541
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

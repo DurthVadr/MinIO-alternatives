@@ -1,0 +1,10 @@
+
+----------------------------------------
+Operation: PUTPART. Concurrency: 32
+* Average: 347.97 MiB/s, 43.50 obj/s
+
+Throughput, split into 28 x 1s:
+ * Fastest: 480.4MiB/s, 60.05 obj/s
+ * 50% Median: 362.3MiB/s, 45.29 obj/s
+ * Slowest: 125.5MiB/s, 15.69 obj/s
+

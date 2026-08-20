@@ -172,28 +172,23 @@ image_id="$(docker image inspect --format '{{.Id}}' "$image" 2>/dev/null || true
 # The measured data lands in Docker volumes inside the Docker Desktop VM, whose
 # virtual disk cheerfully reports 200 GB free while actually being a sparse
 # image on a host filesystem with 25 GB left -- so the VM's figure gives false
-# comfort and the host's is the one that can run out. Measured here: one 60s
-# `medium` run consumed ~4 GiB of host disk, and tearing the stack down does
-# not return it immediately (Docker Desktop reclaims on its own schedule,
-# minutes later), so free space lags reality partway through a matrix.
+# comfort and the host's is the one that can run out. Tearing the stack down
+# does not return the space immediately either (Docker Desktop reclaims on its
+# own schedule), so free space lags reality partway through a matrix.
 #
 # One flat floor is not enough: `bigdata-put` writes several GiB in 30s, so a
-# run can clear a 10 GiB floor and still fill the disk mid-flight. The floor is
-# the profile's own estimate doubled (config-2 stores a second copy or parity,
-# and the estimate is an estimate) plus 4 GiB of slack, never below
-# BENCH_MIN_FREE_GIB. The same figure is handed to the assembler, which
-# re-checks it after the run so the next one is not started into a disk that
-# has not been reclaimed.
+# run can clear a 10 GiB floor and still fill the disk mid-flight. The figure
+# comes from bench/disk_budget.py, which is the ONLY place the formula lives --
+# bench/run.sh waits for the same number before starting this script, and when
+# the two disagreed a transient dip became a permanent lost cell instead of a
+# pause. The same figure is handed to the assembler, which re-checks it after
+# the run so the next one is not started into a disk that has not been
+# reclaimed.
 # ---------------------------------------------------------------------------
 min_free_gib="${BENCH_MIN_FREE_GIB:-10}"
-required_gib="$(
-  BENCH_WRITE_GIB="$write_gib_estimate" BENCH_CONFIG_NAME="$config" BENCH_FLOOR="$min_free_gib" \
-  "$PY" -c 'import math, os
-write = float(os.environ["BENCH_WRITE_GIB"])
-if os.environ["BENCH_CONFIG_NAME"] == "c2":
-    write *= 2
-print(max(int(os.environ["BENCH_FLOOR"]), int(math.ceil(write * 2 + 4))))'
-)"
+required_gib="$("$PY" "$ROOT/bench/disk_budget.py" "$ROOT/bench/workloads.yaml" \
+  "$profile_id" "$config" "$min_free_gib")" \
+  || die "could not compute the disk requirement for '$profile_id' on $config"
 host_free_bytes() { echo $(( $(df -k "$ROOT" | awk 'NR==2 {print $4}') * 1024 )); }
 disk_required=$(( required_gib * 1024 * 1024 * 1024 ))
 disk_before="$(host_free_bytes)"

@@ -385,6 +385,14 @@ def build_metrics(analysis, full_records, window_start, window_end):
 # ---------------------------------------------------------------------------
 # Telemetry
 # ---------------------------------------------------------------------------
+
+# A 1 Hz sampler dividing a cumulative nanosecond counter by a wall-clock delta
+# lands a few percent either side of a hard cgroup cap; 1.10x is where a sample
+# stops being noise and starts being a measurement artefact worth flagging.
+CPU_MATERIALLY_OVER = 1.10
+# Mean utilisation at or above this fraction of the budget means the system was
+# limited by the budget rather than by itself.
+CPU_BUDGET_BOUND = 0.90
 def aggregate_telemetry(rows, window_start=None, window_end=None,
                         client_cpu_limit_pct=None, server_cpu_budget_pct=None):
     """Per-role and per-container aggregates from the telemetry CSV rows.
@@ -481,6 +489,17 @@ def aggregate_telemetry(rows, window_start=None, window_end=None,
             over = [c for c in cpus if c > server_cpu_budget_pct]
             block["cpu_pct_samples_over_budget"] = len(over)
             block["cpu_pct_fraction_over_budget"] = len(over) / len(cpus) if cpus else None
+            # A system sitting exactly on its cap produces a long tail of
+            # samples a percent or two above it -- 1 Hz sampling of a
+            # cumulative counter cannot do better. Counting those as artefacts
+            # made the plausibility check a function of how close to the ceiling
+            # the system ran. This is the count that means something.
+            materially_over = [c for c in cpus
+                               if c > server_cpu_budget_pct * CPU_MATERIALLY_OVER]
+            block["cpu_pct_samples_over_budget_material"] = len(materially_over)
+            block["cpu_pct_fraction_over_budget_material"] = (
+                len(materially_over) / len(cpus) if cpus else None
+            )
             block["cpu_pct_max_over_budget_ratio"] = (
                 max(cpus) / server_cpu_budget_pct if cpus else None
             )
@@ -507,7 +526,16 @@ def aggregate_telemetry(rows, window_start=None, window_end=None,
 # explicitly, and capping the rate, keeps a real 5xx from hiding behind that
 # tolerance.
 WARP_RECORD_ARTIFACTS = frozenset({"negative duration"})
-ARTIFACT_ERROR_RATE_LIMIT = 0.001  # 0.1%
+ARTIFACT_ERROR_RATE_LIMIT = 0.001  # 0.1%  -- above this the run is suspect
+# The warn-level twin fires an order of magnitude earlier. It used to fire on
+# `errors == 0`, i.e. on a single discarded record: two of the first three
+# warnings in the matrix were ONE record in 13,090 and in 18,969 (0.008% and
+# 0.005%), ten to twenty times under the fatal cap. A `small` run carries
+# 100k-400k records, so on that rule most of the 192 runs would land in
+# ok_with_warnings and the status would stop distinguishing anything. The count
+# stays in the detail either way, so nothing is hidden by not warning.
+ARTIFACT_WARN_RATE_LIMIT = 0.0001  # 0.01%
+
 
 
 def classify_errors(analysis):
@@ -550,7 +578,11 @@ def decide_status(checks, warp_ok, analysis_ok):
         return "failed"
     if any(c["severity"] == "fatal" and not c["ok"] for c in checks):
         return "suspect"
-    if any(not c["ok"] for c in checks):
+    # "info" checks record a fact about the run rather than a defect in it --
+    # server_cpu_had_headroom is the one that exists -- so they never move the
+    # status. Anything whose severity is not recognised still does, so a new
+    # check cannot go unnoticed by being misspelled.
+    if any(c["severity"] != "info" and not c["ok"] for c in checks):
         return "ok_with_warnings"
     return "ok"
 
@@ -574,9 +606,15 @@ def evaluate_checks(check, *, warp_exit, analyze_exit, analysis, metrics, teleme
               "warp reported %s error(s) in %s requests%s"
               % (errors, requests,
                  "" if errors == 0 else " (%s)" % ", ".join(sorted(set(messages))[:3])))
-        check("no_analysis_artifact_errors", errors == 0, "warn",
-              "%s of %s requests were discarded by warp's own record validation"
-              % (errors, requests))
+        artifact_rate = (errors / requests) if requests else 0.0
+        check("no_analysis_artifact_errors",
+              errors == 0 or (artifacts_only and artifact_rate <= ARTIFACT_WARN_RATE_LIMIT),
+              "warn",
+              "%s of %s requests (%.4f%%) were discarded by warp's own record "
+              "validation; warns above %.2f%%%s"
+              % (errors, requests, artifact_rate * 100, ARTIFACT_WARN_RATE_LIMIT * 100,
+                 "" if artifacts_only or not messages else
+                 " -- and not all of them are known artefacts"))
         check("measured_window_plausible", measured >= 0.4 * duration_requested, "fatal",
               "measured %.1fs of a requested %ds window (warp trims its own ramp)"
               % (measured, duration_requested))
@@ -597,15 +635,47 @@ def evaluate_checks(check, *, warp_exit, analyze_exit, analysis, metrics, teleme
     check("telemetry_client_sampled", (client.get("samples") or 0) > 0, "warn",
           "%s client telemetry sample instants" % client.get("samples"))
 
-    over_fraction = server.get("cpu_pct_fraction_over_budget")
+    # Two different facts used to share one check, and the wrong one was firing.
+    #
+    # A sample a few percent over a cgroup budget is 1 Hz counter noise, not an
+    # impossible measurement. The old fraction arm counted every such sample and
+    # tripped at 25% of them, which made it a knife edge between physically
+    # identical runs: rustfs c2 bigdata-get failed at 0.34 while rustfs c1
+    # bigdata-get, the same workload against the same binary, passed at 0.247 --
+    # and neither had a magnitude problem (worst 1.04x, inside the noise). What
+    # both were really showing is RustFS pegged at its ceiling, mean 556-559%
+    # of a 600% budget.
+    #
+    # So: plausibility now counts only samples that are meaningfully over the
+    # budget, and "this system was budget-bound" gets its own INFO check. That
+    # second fact matters to the analysis -- a system at its ceiling was limited
+    # by the budget this study gave it, not by its storage engine -- but it is
+    # information, not a defect, and it must not push the run out of "ok".
+    over_fraction = server.get("cpu_pct_fraction_over_budget_material")
+    if over_fraction is None:
+        over_fraction = server.get("cpu_pct_fraction_over_budget")
     over_ratio = server.get("cpu_pct_max_over_budget_ratio")
     check("telemetry_cpu_plausible",
           (over_fraction is None or over_fraction <= 0.25)
           and (over_ratio is None or over_ratio <= 1.25), "warn",
-          "%s of server CPU samples exceeded the %s%% cgroup budget; worst was %s of it"
+          "%s of server CPU samples exceeded the %s%% cgroup budget by more than "
+          "%.0f%%; worst was %s of it"
           % ("unknown fraction" if over_fraction is None else "%.0f%%" % (over_fraction * 100),
              server.get("cpu_pct_budget"),
+             (CPU_MATERIALLY_OVER - 1) * 100,
              "unknown" if over_ratio is None else "%.2fx" % over_ratio))
+
+    budget = server.get("cpu_pct_budget")
+    cpu_mean = server.get("cpu_pct_mean")
+    utilisation = (cpu_mean / budget) if (budget and cpu_mean is not None) else None
+    check("server_cpu_had_headroom",
+          utilisation is None or utilisation < CPU_BUDGET_BOUND, "info",
+          "server averaged %s of its %s%% budget%s"
+          % ("unknown" if utilisation is None else "%.0f%%" % (utilisation * 100),
+             budget,
+             "" if utilisation is None or utilisation < CPU_BUDGET_BOUND else
+             " -- budget-bound, so this number is what the system does with "
+             "%s%% of CPU, not what it can do" % budget))
 
     saturation = client.get("cpu_saturation_mean")
     check("client_not_saturated", saturation is None or saturation < 0.90, "warn",

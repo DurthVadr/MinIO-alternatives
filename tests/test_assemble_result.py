@@ -485,9 +485,37 @@ def _errors_check(total_errors, requests, first_errors):
     return {c["name"]: c for c in checks}
 
 
-def test_a_handful_of_timing_artefacts_is_a_warning_not_a_fatal():
+def test_a_handful_of_timing_artefacts_is_neither_fatal_nor_a_warning():
+    """The warn arm is a rate, not a presence test.
+
+    It used to fire on a single discarded record. Two of the first three
+    warnings in the real matrix were ONE record in 13,090 and in 18,969 --
+    0.008% and 0.005%, ten to twenty times under the fatal cap -- and a `small`
+    run carries 100k-400k records, so nearly every run in the matrix would have
+    landed in ok_with_warnings and the status would have stopped distinguishing
+    anything. 3 in 43,717 is 0.007%: real, counted, and not worth a warning.
+    """
     by_name = _errors_check(3, 43717, ["Negative duration"])
     assert by_name["no_operation_errors"]["ok"] is True
+    assert by_name["no_analysis_artifact_errors"]["ok"] is True
+    # Silence is not the same as hiding it: the count stays in the detail.
+    assert "3 of 43717" in by_name["no_analysis_artifact_errors"]["detail"]
+
+
+def test_artefacts_above_the_warn_rate_still_warn():
+    # 0.05% -- five times the warn rate, still under the 0.1% fatal cap.
+    by_name = _errors_check(50, 100000, ["Negative duration"])
+    assert by_name["no_operation_errors"]["ok"] is True
+    assert by_name["no_analysis_artifact_errors"]["ok"] is False
+
+
+def test_unrecognised_error_messages_warn_at_any_rate():
+    """artifacts_only is the other half of the condition.
+
+    One InternalError in a million is already fatal on no_operation_errors; the
+    warn arm must not quietly pass it just because the rate is low.
+    """
+    by_name = _errors_check(1, 1000000, ["InternalError"])
     assert by_name["no_analysis_artifact_errors"]["ok"] is False
 
 
@@ -580,3 +608,72 @@ def test_fallback_ttfb_keeps_the_per_window_distribution():
     # already live in latency["request_millis"], and two answers to one
     # question is worse than one.
     assert "request" not in summary
+
+
+# ---------------------------------------------------------------------------
+# Server CPU: plausibility and budget-boundedness are two different facts
+# ---------------------------------------------------------------------------
+def _cpu_checks(server_block):
+    checks, check = ar.make_checker()
+    ar.evaluate_checks(
+        check, warp_exit=0, analyze_exit=0,
+        analysis={"total": {"first_errors": []}, "by_op_type": {}},
+        metrics={"total": {"errors": 0, "requests": 100,
+                           "measure_duration_seconds": 58.0},
+                 "latency_source": "per_request"},
+        telemetry={"server": dict({"samples": 5, "containers": ["a"]}, **server_block),
+                   "client": {"samples": 5, "cpu_saturation_mean": 0.1}},
+        duration_requested=60, expected_containers=["a"], client_cpu_limit_pct=200.0,
+        disk_free_after=10 ** 12, disk_required_bytes=0,
+    )
+    return checks, {c["name"]: c for c in checks}
+
+
+PEGGED = {"cpu_pct_budget": 600.0, "cpu_pct_mean": 552.0,
+          "cpu_pct_fraction_over_budget": 0.337,        # noise around the cap
+          "cpu_pct_fraction_over_budget_material": 0.0,  # nothing really over it
+          "cpu_pct_max_over_budget_ratio": 1.04}
+
+
+def test_a_system_pegged_at_its_budget_is_information_not_a_defect():
+    """The check that used to fire here was a knife edge between identical runs.
+
+    rustfs c2 bigdata-get failed the old plausibility check at 0.337 of samples
+    "over budget" while rustfs c1 bigdata-get -- the same workload against the
+    same binary -- passed at 0.244. Neither had a magnitude problem: the worst
+    sample was 1.04x, inside what 1 Hz sampling of a cumulative counter can
+    resolve. What both were showing is RustFS sitting on its ceiling.
+    """
+    checks, by_name = _cpu_checks(PEGGED)
+    assert by_name["telemetry_cpu_plausible"]["ok"] is True
+    assert by_name["server_cpu_had_headroom"]["ok"] is False
+    assert by_name["server_cpu_had_headroom"]["severity"] == "info"
+    # The whole point: a budget-bound run is still a good run.
+    assert ar.decide_status(checks, warp_ok=True, analysis_ok=True) == "ok"
+
+
+def test_samples_materially_over_the_budget_are_still_implausible():
+    block = dict(PEGGED, cpu_pct_fraction_over_budget_material=0.40,
+                 cpu_pct_max_over_budget_ratio=1.9)
+    checks, by_name = _cpu_checks(block)
+    assert by_name["telemetry_cpu_plausible"]["ok"] is False
+    assert ar.decide_status(checks, warp_ok=True, analysis_ok=True) == "ok_with_warnings"
+
+
+def test_a_system_with_headroom_passes_both():
+    block = dict(PEGGED, cpu_pct_mean=300.0, cpu_pct_fraction_over_budget=0.0,
+                 cpu_pct_fraction_over_budget_material=0.0,
+                 cpu_pct_max_over_budget_ratio=0.7)
+    checks, by_name = _cpu_checks(block)
+    assert by_name["telemetry_cpu_plausible"]["ok"] is True
+    assert by_name["server_cpu_had_headroom"]["ok"] is True
+
+
+def test_an_unrecognised_severity_still_moves_the_status():
+    """Only "info" is exempt, and it has to be spelled correctly to be exempt."""
+    checks = [{"name": "x", "ok": False, "severity": "warn", "detail": ""}]
+    assert ar.decide_status(checks, True, True) == "ok_with_warnings"
+    checks = [{"name": "x", "ok": False, "severity": "inf0", "detail": ""}]
+    assert ar.decide_status(checks, True, True) == "ok_with_warnings"
+    checks = [{"name": "x", "ok": False, "severity": "info", "detail": ""}]
+    assert ar.decide_status(checks, True, True) == "ok"

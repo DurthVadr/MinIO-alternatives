@@ -149,6 +149,15 @@ done
 # both AC and battery, which would strand a multi-hour run. Rather than change
 # the user's settings, hold an assertion for exactly the lifetime of this
 # process. The env guard makes the re-exec idempotent.
+#
+# What the flags actually buy: -i (no idle sleep) and -s (no system sleep on AC)
+# are the ones that last for the whole run. -d only keeps the display on and -u
+# declares user activity for a default of five seconds, so neither is load
+# bearing; they are kept because they are harmless and make the intent obvious.
+#
+# KNOWN LIMIT: none of this survives closing the lid. A clamshell sleep will
+# still strand the run -- the matrix resumes on the next invocation, but the
+# in-flight measurement is lost. Leave the lid open.
 # ---------------------------------------------------------------------------
 CAFFEINATED="${BENCH_CAFFEINATED:-0}"
 if [ "$CAFFEINATED" != "1" ] && [ -z "${BENCH_NO_CAFFEINATE:-}" ] \
@@ -194,21 +203,33 @@ reclaim() {
   docker builder prune -f >/dev/null 2>&1 || true
 }
 
+# GiB that must be free before (profile, config) may start. bench/disk_budget.py
+# is the only place this formula lives; bench/run-workload.sh refuses below the
+# same number. They must not diverge -- when the driver waited on a flat floor
+# while the measurement refused on a profile-scaled one, the driver never waited
+# for the space the job actually needed, so a transient dip became a permanent
+# no_result instead of a pause, and which cells were lost depended on the order
+# they happened to run in.
+job_required_gib() {
+  "$PY" "$ROOT/bench/disk_budget.py" "$ROOT/bench/workloads.yaml" "$1" "$2" "$MIN_FREE_GIB"
+}
+
+# wait_for_disk <required-gib> <label>
 wait_for_disk() {
-  local free waited=0
+  local required="$1" label="$2" free waited=0
   free="$(free_gib)"
-  if [ "$free" -ge "$MIN_FREE_GIB" ]; then
-    echo "   disk: ${free} GiB free (floor ${MIN_FREE_GIB} GiB)"
+  if [ "$free" -ge "$required" ]; then
+    echo "   disk: ${free} GiB free, ${label} needs ${required} GiB"
     return 0
   fi
-  echo "   disk: only ${free} GiB free, floor is ${MIN_FREE_GIB} GiB -- waiting up to ${DISK_WAIT_SECONDS}s for Docker Desktop to reclaim"
+  echo "   disk: only ${free} GiB free, ${label} needs ${required} GiB -- waiting up to ${DISK_WAIT_SECONDS}s for Docker Desktop to reclaim"
   reclaim
   while [ "$waited" -lt "$DISK_WAIT_SECONDS" ]; do
     sleep "$DISK_POLL_SECONDS"
     waited=$(( waited + DISK_POLL_SECONDS ))
     free="$(free_gib)"
-    echo "   disk: ${free} GiB free after ${waited}s"
-    if [ "$free" -ge "$MIN_FREE_GIB" ]; then return 0; fi
+    echo "   disk: ${free} GiB free after ${waited}s (need ${required} GiB)"
+    if [ "$free" -ge "$required" ]; then return 0; fi
   done
   return 1
 }
@@ -313,15 +334,20 @@ import os, sys, yaml
 
 cfg = yaml.safe_load(open(os.environ["BENCH_WORKLOADS"]))
 quick = os.environ["BENCH_QUICK"] == "1"
+# Every profile is emitted, always. --quick's truncation to the first few is
+# applied by the caller and ONLY when --profiles was not given: --quick means
+# "one round, no sweep, a short default set", and an explicit --profiles is a
+# deliberate choice that must be able to name any profile in the file. Without
+# that split there is no way to smoke-test the profiles --quick leaves out
+# except by running three full rounds of them.
 ids = [p["id"] for p in cfg["profiles"]]
-if quick:
-    ids = ids[:int(os.environ["BENCH_QUICK_COUNT"])]
 
 out = [("rounds", 1 if quick else cfg["rounds"]),
        ("default_concurrency", cfg["defaults"]["concurrency"]),
        ("warp_image", cfg["warp"]["image"]),
        ("sweep_profile", "" if quick else cfg["sweep"]["profile"])]
 out += [("profile", i) for i in ids]
+out.append(("quick_profile_count", os.environ["BENCH_QUICK_COUNT"]))
 if not quick:
     out += [("sweep_concurrency", c) for c in cfg["sweep"]["concurrency"]]
 
@@ -332,7 +358,7 @@ for key, value in out:
     sys.stdout.write(key + "\x1f" + value + "\n")
 PY
 
-rounds=""; default_concurrency=""; warp_image=""; sweep_profile=""
+rounds=""; default_concurrency=""; warp_image=""; sweep_profile=""; quick_profile_count=""
 profiles=()
 sweep_concurrency=()
 while IFS="$RS" read -r key value; do
@@ -342,6 +368,7 @@ while IFS="$RS" read -r key value; do
     warp_image)          warp_image="$value" ;;
     sweep_profile)       sweep_profile="$value" ;;
     profile)             profiles[${#profiles[@]}]="$value" ;;
+    quick_profile_count) quick_profile_count="$value" ;;
     sweep_concurrency)   sweep_concurrency[${#sweep_concurrency[@]}]="$value" ;;
     "")                  ;;
     *)                   die "unexpected plan key '$key'" ;;
@@ -376,10 +403,21 @@ if [ -n "$PROFILES_SEL" ]; then
   for p in ${want_profiles[@]+"${want_profiles[@]}"}; do
     case "$all_profiles" in
       *" $p "*) selected[${#selected[@]}]="$p" ;;
-      *) die "profile '$p' is not in this run's profile set (${profiles[*]}). Drop --quick to reach the rest." ;;
+      *) die "unknown profile '$p' (workloads.yaml has: ${profiles[*]})" ;;
     esac
   done
   profiles=(${selected[@]+"${selected[@]}"})
+elif [ "$QUICK" = "1" ]; then
+  # --quick's default short set: the first few profiles, in file order.
+  selected=()
+  for p in ${profiles[@]+"${profiles[@]}"}; do
+    [ "${#selected[@]}" -lt "$quick_profile_count" ] || break
+    selected[${#selected[@]}]="$p"
+  done
+  profiles=(${selected[@]+"${selected[@]}"})
+fi
+
+if [ -n "$PROFILES_SEL" ]; then
   # The sweep runs on one profile; if that profile was filtered out, so is the sweep.
   case " ${profiles[*]} " in
     *" $sweep_profile "*) ;;
@@ -415,7 +453,7 @@ total_planned="${#jobs[@]}"
 # ---------------------------------------------------------------------------
 main() {
   local i=0 rec round system config profile conc stem result label
-  local st detail out rc t0 t1 failed_cell="" cell=""
+  local st detail out rc t0 t1 required failed_cell="" cell=""
 
   started_epoch="$(date +%s)"
   trap 'summary "$total_planned"' EXIT
@@ -438,7 +476,7 @@ main() {
   echo "concurrency  : $default_concurrency"
   echo "combinations : $total_planned"
   echo "force        : $FORCE"
-  echo "disk floor   : ${MIN_FREE_GIB} GiB (wait up to ${DISK_WAIT_SECONDS}s), currently $(free_gib) GiB free"
+  echo "disk         : each run waits for its own requirement (profile estimate + ${MIN_FREE_GIB} GiB floor), up to ${DISK_WAIT_SECONDS}s; currently $(free_gib) GiB free"
   if [ "$CAFFEINATED" = "1" ]; then
     echo "sleep        : holding caffeinate -dimsu for the lifetime of this run"
   else
@@ -505,10 +543,12 @@ main() {
     fi
 
     echo "[$i/$total_planned] $label -- $(now_utc)"
-    if ! wait_for_disk; then
-      aborted="host free space never came back above ${MIN_FREE_GIB} GiB (waited ${DISK_WAIT_SECONDS}s, $(free_gib) GiB free). Free space and re-run; completed combinations are skipped automatically."
+    required="$(job_required_gib "$profile" "$config")" \
+      || die "could not compute the disk requirement for $profile on $config"
+    if ! wait_for_disk "$required" "$profile/$config"; then
+      aborted="host free space never reached the ${required} GiB that $profile on $config needs (waited ${DISK_WAIT_SECONDS}s, $(free_gib) GiB free). Free space and re-run; completed combinations are skipped automatically."
       echo "!! $aborted" >&2
-      record "no_result" "$label" "aborted" "aborted before this run: disk floor"
+      record "no_result" "$label" "aborted" "aborted before this run: needed ${required} GiB"
       teardown_all
       exit 1
     fi
@@ -580,5 +620,12 @@ teardown_all() {
   done
 }
 
+# A dry run starts nothing and measures nothing, so it has no business
+# appending to the committed run log; it also needs no subshell, and main's
+# explicit `exit` then ends the script directly.
+if [ "$DRY_RUN" = "1" ]; then
+  main
+  exit $?
+fi
 main 2>&1 | tee -a "$LOG"
 exit "${PIPESTATUS[0]}"

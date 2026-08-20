@@ -1,12 +1,15 @@
 {
   "schema": 2,
-  "status": "ok",
-  "failed_checks": [],
+  "status": "suspect",
+  "failed_checks": [
+    "no_operation_errors",
+    "no_analysis_artifact_errors"
+  ],
   "hardware_profile": {
     "schema": 1,
     "profile_id": "apple-m1-8gb-darwin",
     "fingerprint": "140c82422064",
-    "captured_at": "2026-08-20T08:11:15Z",
+    "captured_at": "2026-08-20T09:52:38Z",
     "host": {
       "os": "darwin",
       "os_version": "25.4.0",
@@ -25,7 +28,7 @@
       "storage_driver": "overlayfs"
     },
     "disk": {
-      "host_free_bytes": 33528160256
+      "host_free_bytes": 34325102592
     },
     "images": {
       "minio": "sha256:3804726ba5769adfbe099766e70477003ae0bfd1e1a3ea12268ef830f3ffdf39",
@@ -64,14 +67,14 @@
       "bench-rustfs"
     ],
     "server_cpu_budget_pct": 600.0,
-    "started_at": "2026-08-20T08:11:15Z",
-    "ended_at": "2026-08-20T08:12:37Z",
+    "started_at": "2026-08-20T09:52:38Z",
+    "ended_at": "2026-08-20T09:54:16Z",
     "benchdata_file": "rustfs__c1__medium__c32__r1.benchdata.csv.zst",
-    "benchdata_bytes": 1311223,
-    "benchdata_sha256": "67ff4be7ed0dc84f259b12df8db42f81d6cc61d89bf95106a406524380b95792",
-    "host_disk_free_bytes_before": 34276929536,
-    "host_disk_free_bytes_after": 24614297600,
-    "host_disk_required_bytes": 15032385536,
+    "benchdata_bytes": 38883,
+    "benchdata_sha256": "475aff95d7fd25c956e21a938d596d9314aa8e614c685e166a50fcb5093bc723",
+    "host_disk_free_bytes_before": 34325061632,
+    "host_disk_free_bytes_after": 30867415040,
+    "host_disk_required_bytes": 22548578304,
     "warp_commandline": ""
   },
   "checks": [
@@ -89,15 +92,15 @@
     },
     {
       "name": "no_operation_errors",
-      "ok": true,
+      "ok": false,
       "severity": "fatal",
-      "detail": "warp reported 0 error(s) in 39998 requests"
+      "detail": "warp reported 3 error(s) in 863 requests (unexpected EOF)"
     },
     {
       "name": "no_analysis_artifact_errors",
-      "ok": true,
+      "ok": false,
       "severity": "warn",
-      "detail": "0 of 39998 requests were discarded by warp's own record validation"
+      "detail": "3 of 863 requests (0.3476%) were discarded by warp's own record validation; warns above 0.01% -- and not all of them are known artefacts"
     },
     {
       "name": "measured_window_plausible",
@@ -109,7 +112,7 @@
       "name": "work_was_done",
       "ok": true,
       "severity": "fatal",
-      "detail": "39998 requests recorded"
+      "detail": "863 requests recorded"
     },
     {
       "name": "latency_from_per_request_records",
@@ -121,7 +124,7 @@
       "name": "telemetry_has_samples",
       "ok": true,
       "severity": "fatal",
-      "detail": "60 server telemetry sample instants"
+      "detail": "21 server telemetry sample instants"
     },
     {
       "name": "telemetry_containers_complete",
@@ -133,81 +136,89 @@
       "name": "telemetry_client_sampled",
       "ok": true,
       "severity": "warn",
-      "detail": "60 client telemetry sample instants"
+      "detail": "21 client telemetry sample instants"
     },
     {
       "name": "telemetry_cpu_plausible",
       "ok": true,
       "severity": "warn",
-      "detail": "0% of server CPU samples exceeded the 600.0% cgroup budget; worst was 0.99x of it"
+      "detail": "0% of server CPU samples exceeded the 600.0% cgroup budget by more than 10%; worst was 1.01x of it"
+    },
+    {
+      "name": "server_cpu_had_headroom",
+      "ok": true,
+      "severity": "info",
+      "detail": "server averaged unknown of its 600.0% budget"
     },
     {
       "name": "client_not_saturated",
       "ok": true,
       "severity": "warn",
-      "detail": "warp averaged 0.54 of its 200.0% CPU budget; above ~0.90 the number is the client's, not the server's"
+      "detail": "warp averaged 0.26 of its 200.0% CPU budget; above ~0.90 the number is the client's, not the server's"
     },
     {
       "name": "disk_headroom_after_run",
       "ok": true,
       "severity": "warn",
-      "detail": "22.9 GiB free after the run against 14.0 GiB needed for another one; Docker Desktop reclaims freed volume space on its own schedule"
+      "detail": "28.7 GiB free after the run against 21.0 GiB needed for another one; Docker Desktop reclaims freed volume space on its own schedule"
     }
   ],
   "telemetry": {
-    "rows_total": 158,
-    "rows_in_window": 120,
+    "rows_total": 101,
+    "rows_in_window": 42,
     "server": {
-      "samples": 60,
+      "samples": 21,
       "containers": [
         "bench-rustfs"
       ],
-      "cpu_pct_sum_mean": 557.9266666666666,
-      "cpu_pct_sum_max": 593.74,
-      "mem_bytes_sum_mean": 432137966.93333334,
-      "mem_bytes_sum_peak": 515284992,
+      "cpu_pct_sum_mean": 504.0809523809524,
+      "cpu_pct_sum_max": 608.33,
+      "mem_bytes_sum_mean": 338113682.28571427,
+      "mem_bytes_sum_peak": 365346816,
       "per_container": {
         "bench-rustfs": {
-          "samples": 60,
-          "cpu_pct_mean": 557.9266666666666,
-          "cpu_pct_max": 593.74,
-          "mem_bytes_mean": 432137966.93333334,
-          "mem_bytes_peak": 515284992,
+          "samples": 21,
+          "cpu_pct_mean": 504.0809523809524,
+          "cpu_pct_max": 608.33,
+          "mem_bytes_mean": 338113682.28571427,
+          "mem_bytes_peak": 365346816,
           "mem_limit_bytes": 2147483648
         }
       },
       "cpu_pct_budget": 600.0,
-      "cpu_pct_samples_over_budget": 0,
-      "cpu_pct_fraction_over_budget": 0.0,
-      "cpu_pct_max_over_budget_ratio": 0.9895666666666667
+      "cpu_pct_samples_over_budget": 2,
+      "cpu_pct_fraction_over_budget": 0.09523809523809523,
+      "cpu_pct_samples_over_budget_material": 0,
+      "cpu_pct_fraction_over_budget_material": 0.0,
+      "cpu_pct_max_over_budget_ratio": 1.0138833333333335
     },
     "client": {
-      "samples": 60,
+      "samples": 21,
       "containers": [
         "bench-warp"
       ],
-      "cpu_pct_sum_mean": 108.90650000000001,
-      "cpu_pct_sum_max": 132.26,
-      "mem_bytes_sum_mean": 85212296.53333333,
-      "mem_bytes_sum_peak": 96333824,
+      "cpu_pct_sum_mean": 51.75047619047619,
+      "cpu_pct_sum_max": 158.73,
+      "mem_bytes_sum_mean": 63570700.190476194,
+      "mem_bytes_sum_peak": 67452928,
       "per_container": {
         "bench-warp": {
-          "samples": 60,
-          "cpu_pct_mean": 108.90650000000001,
-          "cpu_pct_max": 132.26,
-          "mem_bytes_mean": 85212296.53333333,
-          "mem_bytes_peak": 96333824,
+          "samples": 21,
+          "cpu_pct_mean": 51.75047619047619,
+          "cpu_pct_max": 158.73,
+          "mem_bytes_mean": 63570700.190476194,
+          "mem_bytes_peak": 67452928,
           "mem_limit_bytes": 1073741824
         }
       },
       "cpu_pct_limit": 200.0,
-      "cpu_saturation_mean": 0.5445325000000001
+      "cpu_saturation_mean": 0.25875238095238096
     },
     "csv": "rustfs__c1__medium__c32__r1.telemetry.csv",
     "window": {
       "source": "warp total.start_time..total.end_time",
-      "start_epoch": 1787213488.2840908,
-      "end_epoch": 1787213548.3034203
+      "start_epoch": 1787219585.1774516,
+      "end_epoch": 1787219645.910546
     }
   },
   "metrics": {
@@ -215,50 +226,50 @@
     "latency_source": "per_request",
     "total": {
       "measure_duration_seconds": 57.0,
-      "requests": 39998,
-      "objects": 39998,
-      "bytes": 25164775424,
-      "errors": 0,
-      "bytes_per_sec_avg": 418497284.7126567,
-      "obj_per_sec_avg": 665.0080818237574,
-      "bytes_per_sec_median": 435523102,
-      "bytes_per_sec_fastest": 540229893,
-      "bytes_per_sec_slowest": 188167737,
-      "obj_per_sec_median": 695.68,
-      "obj_per_sec_fastest": 851.84,
-      "obj_per_sec_slowest": 297.25,
+      "requests": 863,
+      "objects": 863,
+      "bytes": 546308096,
+      "errors": 3,
+      "bytes_per_sec_avg": 9083857.139361318,
+      "obj_per_sec_avg": 14.37508698783809,
+      "bytes_per_sec_median": 2017316,
+      "bytes_per_sec_fastest": 51545605,
+      "bytes_per_sec_slowest": 667790,
+      "obj_per_sec_median": 2.39,
+      "obj_per_sec_fastest": 72.36,
+      "obj_per_sec_slowest": 1.18,
       "segments": 57
     },
     "by_op": {
       "DELETE": {
         "measure_duration_seconds": 57.0,
-        "requests": 4000,
-        "objects": 4000,
+        "requests": 82,
+        "objects": 82,
         "bytes": 0,
         "errors": 0,
         "bytes_per_sec_avg": 0.0,
-        "obj_per_sec_avg": 66.52729694543447,
+        "obj_per_sec_avg": 1.3997044459803292,
         "bytes_per_sec_median": 0,
         "bytes_per_sec_fastest": 0,
         "bytes_per_sec_slowest": 0,
-        "obj_per_sec_median": 70.99,
-        "obj_per_sec_fastest": 90.26,
-        "obj_per_sec_slowest": 23.18,
+        "obj_per_sec_median": 0.27,
+        "obj_per_sec_fastest": 7.66,
+        "obj_per_sec_slowest": 0.15,
         "segments": 57,
         "latency": {
           "source": "per_request",
-          "records": 4000,
+          "records": 82,
           "record_errors": 0,
           "request_millis": {
-            "samples": 4000,
-            "mean": 68.716903856,
-            "min": 4.064208,
-            "p50": 61.7264165,
-            "p90": 110.07705439999998,
-            "p95": 131.6084771,
-            "p99": 185.0799454999997,
-            "max": 386.161584,
-            "stddev": 34.73640298332724,
+            "samples": 82,
+            "mean": 4421.1814680487805,
+            "min": 263.7125,
+            "p50": 1160.8319595,
+            "p90": 8128.230979000001,
+            "p95": 30697.26390205001,
+            "p99": 32863.83074225,
+            "max": 33000.578891,
+            "stddev": 8645.531082925872,
             "method": "linear interpolation between closest ranks"
           },
           "ttfb_source": "not_recorded"
@@ -266,45 +277,45 @@
       },
       "GET": {
         "measure_duration_seconds": 57.0,
-        "requests": 17999,
-        "objects": 17999,
-        "bytes": 18873319424,
-        "errors": 0,
-        "bytes_per_sec_avg": 313985533.3447477,
-        "obj_per_sec_avg": 299.4399388740041,
-        "bytes_per_sec_median": 327834352,
-        "bytes_per_sec_fastest": 403345737,
-        "bytes_per_sec_slowest": 140044935,
-        "obj_per_sec_median": 312.65,
-        "obj_per_sec_fastest": 384.66,
-        "obj_per_sec_slowest": 133.56,
+        "requests": 385,
+        "objects": 385,
+        "bytes": 403701760,
+        "errors": 3,
+        "bytes_per_sec_avg": 6747618.948751109,
+        "obj_per_sec_avg": 6.435030888320073,
+        "bytes_per_sec_median": 1659476,
+        "bytes_per_sec_fastest": 37830068,
+        "bytes_per_sec_slowest": 429430,
+        "obj_per_sec_median": 1.58,
+        "obj_per_sec_fastest": 36.08,
+        "obj_per_sec_slowest": 0.41,
         "segments": 57,
         "latency": {
           "source": "per_request",
-          "records": 17999,
-          "record_errors": 0,
+          "records": 385,
+          "record_errors": 3,
           "request_millis": {
-            "samples": 17999,
-            "mean": 38.715329436246456,
-            "min": 2.569125,
-            "p50": 33.421667,
-            "p90": 65.32632500000001,
-            "p95": 81.35775829999996,
-            "p99": 126.44582750000005,
-            "max": 310.203166,
-            "stddev": 23.7049697096798,
+            "samples": 382,
+            "mean": 2273.025878722513,
+            "min": 31.058667,
+            "p50": 684.3901255000001,
+            "p90": 2143.404430700001,
+            "p95": 14036.490025949974,
+            "p99": 32886.51062796,
+            "max": 32994.794641,
+            "stddev": 6084.476502039946,
             "method": "linear interpolation between closest ranks"
           },
           "ttfb_millis": {
-            "samples": 17999,
-            "mean": 28.260508354017883,
-            "min": 2.206087112426758,
-            "p50": 23.267030715942383,
-            "p90": 50.09026527404786,
-            "p95": 63.388824462890625,
-            "p99": 101.35648250579845,
-            "max": 308.4142208099365,
-            "stddev": 19.89521588589397,
+            "samples": 382,
+            "mean": 2045.4351664837743,
+            "min": 22.02463150024414,
+            "p50": 632.8563690185547,
+            "p90": 2090.2127981185913,
+            "p95": 11716.496539115866,
+            "p99": 31989.62720155716,
+            "max": 32104.61473464966,
+            "stddev": 5508.953407270852,
             "method": "linear interpolation between closest ranks"
           },
           "ttfb_source": "per_request"
@@ -312,140 +323,108 @@
       },
       "PUT": {
         "measure_duration_seconds": 57.0,
-        "requests": 6000,
-        "objects": 6000,
-        "bytes": 6291456000,
+        "requests": 136,
+        "objects": 136,
+        "bytes": 142606336,
         "errors": 0,
-        "bytes_per_sec_avg": 104511751.36790892,
-        "obj_per_sec_avg": 99.67017304221051,
-        "bytes_per_sec_median": 109358080,
-        "bytes_per_sec_fastest": 136884154,
-        "bytes_per_sec_slowest": 48122801,
-        "obj_per_sec_median": 104.29,
-        "obj_per_sec_fastest": 130.54,
-        "obj_per_sec_slowest": 45.89,
+        "bytes_per_sec_avg": 2336238.190610209,
+        "obj_per_sec_avg": 2.2280103593923655,
+        "bytes_per_sec_median": 357840,
+        "bytes_per_sec_fastest": 13715537,
+        "bytes_per_sec_slowest": 82882,
+        "obj_per_sec_median": 0.34,
+        "obj_per_sec_fastest": 13.08,
+        "obj_per_sec_slowest": 0.08,
         "segments": 57,
         "latency": {
           "source": "per_request",
-          "records": 6000,
+          "records": 136,
           "record_errors": 0,
           "request_millis": {
-            "samples": 6000,
-            "mean": 136.068977212,
-            "min": 37.404333,
-            "p50": 120.48,
-            "p90": 200.44602500000002,
-            "p95": 244.9372889500001,
-            "p99": 451.938063160002,
-            "max": 1045.833583,
-            "stddev": 72.24673245480056,
+            "samples": 136,
+            "mean": 3475.999450161765,
+            "min": 470.956125,
+            "p50": 2279.7863964999997,
+            "p90": 7016.965544500001,
+            "p95": 8463.483462,
+            "p99": 32412.71326555001,
+            "max": 33421.684516,
+            "stddev": 5187.827931135966,
             "method": "linear interpolation between closest ranks"
           },
           "ttfb_source": "window_summary",
           "ttfb_window_summary": {
-            "windows": 7,
-            "requests": 6000,
+            "windows": 3,
+            "requests": 136,
             "weighting": "request-weighted mean across warp's aggregation windows",
             "ttfb": {
-              "mean_millis": 130.629973229,
-              "p25_millis_window_mean": 91.10341488466666,
-              "p50_millis_window_mean": 115.46204671983334,
-              "p75_millis_window_mean": 149.72696309449998,
-              "p90_millis_window_mean": 194.75355461233335,
-              "p99_millis_window_mean": 407.5784902418333,
-              "min_millis": 32.619083,
-              "max_millis": 1042.819792
+              "mean_millis": 3331.5775028529415,
+              "p25_millis_window_mean": 1301.1070930882352,
+              "p50_millis_window_mean": 2159.0471158970586,
+              "p75_millis_window_mean": 3706.8459954485297,
+              "p90_millis_window_mean": 11256.541501794116,
+              "p99_millis_window_mean": 12172.805382639706,
+              "min_millis": 387.196251,
+              "max_millis": 33101.484543
             },
             "per_window": [
               {
-                "start_time": "2026-08-20T08:11:28Z",
-                "end_time": "2026-08-20T08:11:38Z",
-                "requests": 1017,
-                "ttfb_p50_millis": 114.620375,
-                "ttfb_p99_millis": 283.588833,
-                "request_p50_millis": 119.411417
+                "start_time": "2026-08-20T09:53:38Z",
+                "end_time": "2026-08-20T09:53:48Z",
+                "requests": 31,
+                "ttfb_p50_millis": 2517.848209,
+                "ttfb_p99_millis": 33101.484543,
+                "request_p50_millis": 2587.88646
               },
               {
-                "start_time": "2026-08-20T08:11:38Z",
-                "end_time": "2026-08-20T08:11:48Z",
-                "requests": 886,
-                "ttfb_p50_millis": 122.575791,
-                "ttfb_p99_millis": 654.255001,
-                "request_p50_millis": 128.536792
+                "start_time": "2026-08-20T09:53:48Z",
+                "end_time": "2026-08-20T09:53:58Z",
+                "requests": 51,
+                "ttfb_p50_millis": 2131.998543,
+                "ttfb_p99_millis": 8780.976198,
+                "request_p50_millis": 2306.917918
               },
               {
-                "start_time": "2026-08-20T08:11:48Z",
-                "end_time": "2026-08-20T08:11:58Z",
-                "requests": 973,
-                "ttfb_p50_millis": 118.15625,
-                "ttfb_p99_millis": 273.431042,
-                "request_p50_millis": 122.955041
-              },
-              {
-                "start_time": "2026-08-20T08:11:58Z",
-                "end_time": "2026-08-20T08:12:08Z",
-                "requests": 1102,
-                "ttfb_p50_millis": 109.156875,
-                "ttfb_p99_millis": 375.446792,
-                "request_p50_millis": 115.024958
-              },
-              {
-                "start_time": "2026-08-20T08:12:08Z",
-                "end_time": "2026-08-20T08:12:18Z",
-                "requests": 990,
-                "ttfb_p50_millis": 114.267041,
-                "ttfb_p99_millis": 288.956084,
-                "request_p50_millis": 120.397542
-              },
-              {
-                "start_time": "2026-08-20T08:12:18Z",
-                "end_time": "2026-08-20T08:12:28Z",
-                "requests": 990,
-                "ttfb_p50_millis": 116.731,
-                "ttfb_p99_millis": 610.144917,
-                "request_p50_millis": 120.891625
-              },
-              {
-                "start_time": "2026-08-20T08:12:28Z",
-                "end_time": "2026-08-20T08:12:38Z",
-                "requests": 42,
-                "ttfb_p50_millis": 87.053334,
-                "ttfb_p99_millis": 178.343042,
-                "request_p50_millis": 93.771042
+                "start_time": "2026-08-20T09:53:58Z",
+                "end_time": "2026-08-20T09:54:08Z",
+                "requests": 54,
+                "ttfb_p50_millis": 1978.614585,
+                "ttfb_p99_millis": 3361.587502,
+                "request_p50_millis": 2155.410626
               }
             ]
           }
         }
       },
       "STAT": {
-        "measure_duration_seconds": 57.0,
-        "requests": 11999,
-        "objects": 11999,
+        "measure_duration_seconds": 56.0,
+        "requests": 260,
+        "objects": 260,
         "bytes": 0,
         "errors": 0,
         "bytes_per_sec_avg": 0.0,
-        "obj_per_sec_avg": 199.3706729621085,
+        "obj_per_sec_avg": 4.274367423812286,
         "bytes_per_sec_median": 0,
         "bytes_per_sec_fastest": 0,
         "bytes_per_sec_slowest": 0,
-        "obj_per_sec_median": 208.51,
-        "obj_per_sec_fastest": 260.12,
-        "obj_per_sec_slowest": 94.62,
-        "segments": 57,
+        "obj_per_sec_median": 1.06,
+        "obj_per_sec_fastest": 29.2,
+        "obj_per_sec_slowest": 0.04,
+        "segments": 56,
         "latency": {
           "source": "per_request",
-          "records": 11999,
+          "records": 260,
           "record_errors": 0,
           "request_millis": {
-            "samples": 11999,
-            "mean": 10.802829897241438,
-            "min": 0.278667,
-            "p50": 8.389583,
-            "p90": 21.136150200000003,
-            "p95": 27.4278702,
-            "p99": 45.46977082,
-            "max": 161.978959,
-            "stddev": 9.559354920114012,
+            "samples": 260,
+            "mean": 744.7070913692307,
+            "min": 3.326333,
+            "p50": 148.3906875,
+            "p90": 1441.0639211999994,
+            "p95": 2325.1892530999994,
+            "p99": 17291.459359660003,
+            "max": 24697.933387,
+            "stddev": 2657.246770593964,
             "method": "linear interpolation between closest ranks"
           },
           "ttfb_source": "not_recorded"
